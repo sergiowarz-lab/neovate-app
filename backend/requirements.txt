@@ -1,0 +1,30 @@
+# --- Framework web ---
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9
+
+# --- Base de datos ---
+sqlalchemy>=2.0.25
+psycopg2-binary>=2.9.9
+alembic>=1.13.0
+
+# --- Configuración ---
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
+python-dotenv>=1.0.0
+
+# --- Seguridad / Auth ---
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.0
+
+# --- Procesamiento de PDFs y Excel ---
+pdfplumber>=0.11.0
+pandas>=2.1.0
+openpyxl>=3.1.0
+
+# --- Reglas de negocio ---
+holidays>=0.45
+
+# --- Utilidades ---
+email-validator>=2.1.0
