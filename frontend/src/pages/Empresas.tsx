@@ -60,10 +60,10 @@ export default function Empresas() {
             <caption className="sr-only">Lista de empresas aliadas</caption>
             <thead className="bg-slate-50 dark:bg-slate-900/40">
               <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">NIT</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">NIT9</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Nombre</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Activa</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">NIT</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">NIT9</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Nombre</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Activa</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">

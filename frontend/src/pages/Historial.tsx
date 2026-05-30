@@ -86,13 +86,13 @@ function ReportTable({
         <caption className="sr-only">Historial de reportes de {type === "ss" ? "Seguridad Social" : "Nómina"}</caption>
         <thead className="bg-slate-50 dark:bg-slate-900/40">
           <tr>
-            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">ID</th>
-            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">NIT</th>
-            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Aliado</th>
-            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Período</th>
-            {type === "ss" && <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Operador</th>}
-            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Estado</th>
-            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Fecha pago</th>
+            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">ID</th>
+            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">NIT</th>
+            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Aliado</th>
+            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Período</th>
+            {type === "ss" && <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Operador</th>}
+            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Estado</th>
+            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Fecha pago</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200 dark:divide-slate-700">

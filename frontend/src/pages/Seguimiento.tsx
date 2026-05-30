@@ -68,12 +68,12 @@ export default function Seguimiento() {
             <caption className="sr-only">Seguimiento mensual</caption>
             <thead className="bg-slate-50 dark:bg-slate-900/40">
               <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Empresa</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">SS</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Plazo SS</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Pago SS</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Días mora</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Nómina</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Empresa</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">SS</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Plazo SS</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Pago SS</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Días mora</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Nómina</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
