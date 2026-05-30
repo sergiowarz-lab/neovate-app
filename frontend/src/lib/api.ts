@@ -3,7 +3,7 @@ import axios, { AxiosError } from "axios";
 const STORAGE_KEY = "neovate_token";
 
 export const api = axios.create({
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_URL ?? "/api",   
   headers: { "Content-Type": "application/json" },
 });
 

@@ -27,11 +27,14 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: str = "http://localhost:5173"
 
+    DB_SSLMODE: str = "require"   # ← añade esta línea
+
     @property
     def database_url(self) -> str:
         return (
             f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PASSWORD}"
             f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+            f"?sslmode={self.DB_SSLMODE}"
         )
 
     @property
