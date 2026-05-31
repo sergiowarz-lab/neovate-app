@@ -1,20 +1,30 @@
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { api, errorMessage } from "../lib/api";
 import type { EstadoReporte, ReporteNomina, ReporteSS } from "../types";
+import {
+  PageHeader, TableWrapper, TableHead, Th, Td,
+  StatusBadge, ErrorAlert, LoadingRow, EmptyRow,
+} from "../components/ui";
 
 type Tab = "ss" | "nomina";
 
 const ESTADO_LABEL: Record<EstadoReporte, string> = {
-  Validado_ok: "Validado",
-  Rechazado: "Rechazado",
-  Validado_individual: "Validado (individual)",
+  Validado_ok:         "Validado",
+  Rechazado:           "Rechazado",
+  Validado_individual: "Ind.",
 };
 
-const ESTADO_BADGE: Record<EstadoReporte, string> = {
-  Validado_ok: "bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200",
-  Rechazado: "bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200",
-  Validado_individual: "bg-sky-100 dark:bg-sky-900 text-sky-800 dark:text-sky-200",
+const ESTADO_VARIANT: Record<EstadoReporte, "success" | "danger" | "info"> = {
+  Validado_ok:         "success",
+  Rechazado:           "danger",
+  Validado_individual: "info",
 };
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "ss",     label: "Seguridad Social" },
+  { key: "nomina", label: "Nómina" },
+];
 
 export default function Historial() {
   const [tab, setTab] = useState<Tab>("ss");
@@ -36,86 +46,82 @@ export default function Historial() {
       .finally(() => setLoading(false));
   }, [tab]);
 
+  const rows = tab === "ss" ? ss : nomina;
+
   return (
     <div>
-      <header className="mb-4">
-        <h1 className="text-2xl font-bold">Historial</h1>
-      </header>
+      <PageHeader title="Historial de reportes" subtitle="Registros de Seguridad Social y Nómina" />
 
-      <div role="tablist" aria-label="Tipo de reporte" className="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden mb-4">
-        {(["ss", "nomina"] as const).map((t) => (
+      <motion.div
+        role="tablist"
+        aria-label="Tipo de reporte"
+        className="inline-flex gap-1 p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 mb-5"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
+        {TABS.map((t) => (
           <button
-            key={t}
+            key={t.key}
             role="tab"
-            aria-selected={tab === t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium ${
-              tab === t
-                ? "bg-brand-600 text-white"
-                : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+            aria-selected={tab === t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer ${
+              tab === t.key
+                ? "bg-brand-600 text-white shadow-md shadow-brand-600/30"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            {t === "ss" ? "Seguridad Social" : "Nómina"}
+            {t.label}
           </button>
         ))}
-      </div>
+      </motion.div>
 
-      {loading && <p role="status">Cargando…</p>}
-      {error && <p role="alert" className="text-rose-700 dark:text-rose-300">{error}</p>}
+      {error && <div className="mb-4"><ErrorAlert message={error} /></div>}
 
-      {!loading && !error && tab === "ss" && (
-        <ReportTable rows={ss} type="ss" />
-      )}
-      {!loading && !error && tab === "nomina" && (
-        <ReportTable rows={nomina} type="nomina" />
-      )}
-    </div>
-  );
-}
-
-function ReportTable({
-  rows,
-  type,
-}: {
-  rows: (ReporteSS | ReporteNomina)[];
-  type: "ss" | "nomina";
-}) {
-  return (
-    <div className="overflow-x-auto bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-      <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-        <caption className="sr-only">Historial de reportes de {type === "ss" ? "Seguridad Social" : "Nómina"}</caption>
-        <thead className="bg-slate-50 dark:bg-slate-900/40">
-          <tr>
-            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">ID</th>
-            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">NIT</th>
-            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Aliado</th>
-            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Período</th>
-            {type === "ss" && <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Operador</th>}
-            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Estado</th>
-            <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase whitespace-nowrap">Fecha pago</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-          {rows.map((r) => (
-            <tr key={r.id}>
-              <td className="px-4 py-3 font-mono text-xs">{r.id}</td>
-              <td className="px-4 py-3 font-mono text-sm">{r.nit}</td>
-              <td className="px-4 py-3">{r.aliado ?? "—"}</td>
-              <td className="px-4 py-3 text-sm">{r.anio}-{String(r.mes_obligacion).padStart(2, "0")}</td>
-              {type === "ss" && <td className="px-4 py-3 text-sm">{(r as ReporteSS).operador ?? "—"}</td>}
-              <td className="px-4 py-3">
-                <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${ESTADO_BADGE[r.estado]}`}>
-                  {ESTADO_LABEL[r.estado]}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-sm">{r.fecha_pago ?? "—"}</td>
+      <TableWrapper>
+        <table className="min-w-full">
+          <caption className="sr-only">
+            Historial de reportes de {tab === "ss" ? "Seguridad Social" : "Nómina"}
+          </caption>
+          <TableHead>
+            <tr>
+              <Th>ID</Th>
+              <Th>NIT</Th>
+              <Th>Aliado</Th>
+              <Th>Período</Th>
+              {tab === "ss" && <Th>Operador</Th>}
+              <Th>Estado</Th>
+              <Th>Fecha pago</Th>
             </tr>
-          ))}
-          {rows.length === 0 && (
-            <tr><td colSpan={type === "ss" ? 7 : 6} className="px-4 py-8 text-center text-slate-500">Sin resultados</td></tr>
-          )}
-        </tbody>
-      </table>
+          </TableHead>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            {loading && <LoadingRow cols={tab === "ss" ? 7 : 6} />}
+            {!loading && rows.length === 0 && <EmptyRow cols={tab === "ss" ? 7 : 6} />}
+            {!loading && rows.map((r, i) => (
+              <motion.tr
+                key={r.id}
+                className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2, delay: i * 0.02 }}
+              >
+                <Td className="font-mono text-xs text-slate-400 dark:text-slate-500">{r.id}</Td>
+                <Td className="font-mono text-sm font-medium text-slate-900 dark:text-white">{r.nit}</Td>
+                <Td className="text-sm">{r.aliado ?? "—"}</Td>
+                <Td className="text-sm tabular-nums">
+                  {r.anio}-{String(r.mes_obligacion).padStart(2, "0")}
+                </Td>
+                {tab === "ss" && <Td className="text-sm">{(r as ReporteSS).operador ?? "—"}</Td>}
+                <Td>
+                  <StatusBadge label={ESTADO_LABEL[r.estado]} variant={ESTADO_VARIANT[r.estado]} />
+                </Td>
+                <Td className="text-sm text-slate-600 dark:text-slate-400">{r.fecha_pago ?? "—"}</Td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </TableWrapper>
     </div>
   );
 }
