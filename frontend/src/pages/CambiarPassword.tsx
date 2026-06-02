@@ -1,18 +1,20 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { useAuth } from "../auth/useAuth";
 import { api, errorMessage } from "../lib/api";
+import { GlassInput, GlassButton, ErrorAlert, SuccessAlert, InfoAlert } from "../components/ui";
 
 export default function CambiarPassword() {
   const { user, setPrimerLoginFalse, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [oldPwd, setOldPwd] = useState("");
-  const [newPwd, setNewPwd] = useState("");
+  const [oldPwd, setOldPwd]       = useState("");
+  const [newPwd, setNewPwd]       = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [ok, setOk] = useState(false);
+  const [error, setError]         = useState<string | null>(null);
+  const [loading, setLoading]     = useState(false);
+  const [ok, setOk]               = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -40,104 +42,94 @@ export default function CambiarPassword() {
 
   return (
     <div className="max-w-md mx-auto">
-      <h1 className="text-2xl font-bold mb-2">Cambiar contraseña</h1>
-      {user?.primer_login && (
-        <p className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2 mb-4" role="status">
-          Es tu primer ingreso. Debes definir una contraseña nueva antes de continuar.
-        </p>
-      )}
-
-      <form
-        onSubmit={onSubmit}
-        className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-6 space-y-4"
-        noValidate
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
       >
-        <div>
-          <label htmlFor="old-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            Contraseña actual
-          </label>
-          <input
+        <header className="mb-6">
+          <div className="inline-flex w-12 h-12 rounded-xl bg-brand-600 text-white items-center justify-center font-bold text-xl mb-3 shadow-lg shadow-brand-600/40">
+            🔑
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Cambiar contraseña</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            {user?.primer_login ? "Establece tu contraseña antes de continuar." : "Actualiza tu contraseña de acceso."}
+          </p>
+        </header>
+
+        {user?.primer_login && (
+          <div className="mb-4">
+            <InfoAlert message="Es tu primer ingreso. Debes definir una contraseña nueva antes de continuar." />
+          </div>
+        )}
+
+        <motion.form
+          onSubmit={onSubmit}
+          noValidate
+          className="bg-white dark:bg-white/5 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl dark:shadow-black/40 p-6 space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15, duration: 0.4 }}
+        >
+          <GlassInput
             id="old-password"
+            label="Contraseña actual"
             type="password"
             autoComplete="current-password"
             required
             value={oldPwd}
             onChange={(e) => setOldPwd(e.target.value)}
-            className="mt-1 w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
           />
-        </div>
 
-        <div>
-          <label htmlFor="new-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            Nueva contraseña <span className="text-xs text-slate-500">(mínimo 8 caracteres)</span>
-          </label>
-          <input
+          <GlassInput
             id="new-password"
+            label="Nueva contraseña"
             type="password"
             autoComplete="new-password"
             minLength={8}
             required
             value={newPwd}
             onChange={(e) => setNewPwd(e.target.value)}
-            className="mt-1 w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+            hint="Mínimo 8 caracteres"
           />
-        </div>
 
-        <div>
-          <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            Confirmar nueva contraseña
-          </label>
-          <input
+          <GlassInput
             id="confirm-password"
+            label="Confirmar nueva contraseña"
             type="password"
             autoComplete="new-password"
             minLength={8}
             required
             value={confirmPwd}
             onChange={(e) => setConfirmPwd(e.target.value)}
-            className="mt-1 w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
           />
-        </div>
 
-        {error && (
-          <p className="text-sm text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 rounded-md px-3 py-2" role="alert">
-            {error}
-          </p>
-        )}
-        {ok && (
-          <p className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-md px-3 py-2" role="status">
-            Contraseña actualizada. Redirigiendo…
-          </p>
-        )}
+          {error && <ErrorAlert message={error} />}
+          {ok && <SuccessAlert message="Contraseña actualizada. Redirigiendo…" />}
 
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 py-2.5 rounded-md bg-brand-600 hover:bg-brand-700 text-white font-medium disabled:opacity-60"
-          >
-            {loading ? "Guardando…" : "Cambiar contraseña"}
-          </button>
-          {!user?.primer_login && (
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="px-4 py-2.5 rounded-md border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
-            >
-              Cancelar
-            </button>
-          )}
-          {user?.primer_login && (
-            <button
-              type="button"
-              onClick={() => { logout(); navigate("/login"); }}
-              className="px-4 py-2.5 rounded-md border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
-            >
-              Salir
-            </button>
-          )}
-        </div>
-      </form>
+          <div className="flex gap-3 pt-1">
+            <GlassButton type="submit" disabled={loading} className="flex-1">
+              {loading ? "Guardando…" : "Cambiar contraseña"}
+            </GlassButton>
+
+            {!user?.primer_login && (
+              <GlassButton type="button" variant="secondary" onClick={() => navigate(-1)}>
+                Cancelar
+              </GlassButton>
+            )}
+
+            {user?.primer_login && (
+              <GlassButton
+                type="button"
+                variant="secondary"
+                onClick={() => { logout(); navigate("/login"); }}
+              >
+                Salir
+              </GlassButton>
+            )}
+          </div>
+        </motion.form>
+      </motion.div>
     </div>
   );
 }

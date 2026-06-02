@@ -3,52 +3,117 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-brand-800: #3730a3;
+  /* ── Brand: Warm Gold ── */
+  --color-brand-50:  #fefce8;
+  --color-brand-100: #fef9c3;
+  --color-brand-200: #fde68a;
+  --color-brand-300: #e8c566;
+  --color-brand-400: #d4a843;
+  --color-brand-500: #c9a84c;
+  --color-brand-600: #a8882a;
+  --color-brand-700: #87681a;
+  --color-brand-800: #6b5212;
+  --color-brand-900: #52400c;
+
+  /* ── Tipografía ── */
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 :root {
   color-scheme: light dark;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-text-size-adjust: 100%;
 }
 
-html, body, #root {
-  height: 100%;
-  margin: 0;
-}
+html, body, #root { height: 100%; margin: 0; }
 
+/* ─── Light ────────────────────────────────────────────── */
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #f1f0f7;
+  color: #0f0e17;
 }
 
+/* ─── Dark: Deep space dashboard ──────────────────────── */
 .dark body {
-  background-color: #0f172a;
-  color: #f1f5f9;
+  background-color: #0f0e17;
+  background-image:
+    radial-gradient(ellipse 65% 50% at 0% 0%,   rgba(201,168,76,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(201,168,76,0.04) 0%, transparent 55%);
+  background-attachment: fixed;
+  color: #e8e6f0;
 }
 
+/* ─── Subtle grid overlay ──────────────────────────────── */
+.dark body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Focus ─────────────────────────────────────────────── */
 *:focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid #c9a84c;
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-.skip-link {
-  position: absolute;
-  left: -9999px;
-  top: 0;
-  background: #4338ca;
-  color: white;
-  padding: 0.5rem 1rem;
-  z-index: 100;
+/* ─── Skip link ─────────────────────────────────────────── */
+.skip-link { position:absolute; left:-9999px; top:0; background:#c9a84c; color:#000; padding:.5rem 1rem; z-index:100; font-weight:700; }
+.skip-link:focus { left:.5rem; top:.5rem; }
+
+/* ─── Orb animations ────────────────────────────────────── */
+@keyframes float-a {
+  0%,100% { transform: translateY(0) translateX(0); }
+  33%      { transform: translateY(-28px) translateX(10px); }
+  66%      { transform: translateY(14px) translateX(-8px); }
+}
+@keyframes float-b {
+  0%,100% { transform: translateY(0) translateX(0); }
+  50%      { transform: translateY(20px) translateX(-12px); }
+}
+@keyframes float-c {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-18px) scale(1.05); }
+}
+.orb-a { animation: float-a 12s ease-in-out infinite; }
+.orb-b { animation: float-b  9s ease-in-out infinite; animation-delay:-4s; }
+.orb-c { animation: float-c 14s ease-in-out infinite; animation-delay:-7s; }
+
+/* ─── Gold shimmer border ───────────────────────────────── */
+@keyframes shimmer-gold {
+  0%   { background-position: -300% center; }
+  100% { background-position:  300% center; }
+}
+.holo-border {
+  background: linear-gradient(90deg,
+    rgba(201,168,76,0) 0%, rgba(201,168,76,.8) 20%,
+    rgba(232,197,102,.9) 50%, rgba(201,168,76,.8) 80%,
+    rgba(201,168,76,0) 100%);
+  background-size: 300% auto;
+  animation: shimmer-gold 3s linear infinite;
 }
 
-.skip-link:focus {
-  left: 0.5rem;
-  top: 0.5rem;
+/* ─── Value glow ────────────────────────────────────────── */
+.value-glow-gold    { filter: drop-shadow(0 0 12px rgba(201,168,76,0.7)); }
+.value-glow-emerald { filter: drop-shadow(0 0 12px rgba(34,197,94,0.65)); }
+.value-glow-amber   { filter: drop-shadow(0 0 12px rgba(245,158,11,0.6)); }
+.value-glow-rose    { filter: drop-shadow(0 0 12px rgba(244,63,94,0.6)); }
+
+/* ─── Top gold bar on header ────────────────────────────── */
+.header-gold-bar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #c9a84c 30%, #e8c566 50%, #c9a84c 70%, transparent 100%);
+}
+
+/* ─── Gauge stroke transition ───────────────────────────── */
+.gauge-stroke {
+  transition: stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1);
 }

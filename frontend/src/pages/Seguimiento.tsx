@@ -1,11 +1,25 @@
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { api, errorMessage } from "../lib/api";
 import type { EstadoSeguimiento, SeguimientoMensual } from "../types";
+import {
+  PageHeader, GlassInput, GlassSelect, TableWrapper, TableHead,
+  Th, Td, StatusBadge, ErrorAlert, LoadingRow, EmptyRow,
+} from "../components/ui";
 
-const BADGE: Record<EstadoSeguimiento, string> = {
-  Cumple: "bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200",
-  En_mora: "bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200",
-  Pendiente: "bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200",
+const MESES = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+               "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+const STATUS_VARIANT: Record<EstadoSeguimiento, "success" | "warning" | "danger"> = {
+  Cumple:   "success",
+  En_mora:  "danger",
+  Pendiente: "warning",
+};
+
+const STATUS_LABEL: Record<EstadoSeguimiento, string> = {
+  Cumple:   "Cumple",
+  En_mora:  "En mora",
+  Pendiente: "Pendiente",
 };
 
 export default function Seguimiento() {
@@ -25,82 +39,132 @@ export default function Seguimiento() {
       .finally(() => setLoading(false));
   }, [anio, mes]);
 
+  const counts = rows.reduce(
+    (acc, r) => {
+      if (r.ss_estado) acc[r.ss_estado] = (acc[r.ss_estado] ?? 0) + 1;
+      return acc;
+    },
+    {} as Partial<Record<EstadoSeguimiento, number>>
+  );
+
   return (
     <div>
-      <header className="mb-4">
-        <h1 className="text-2xl font-bold">Seguimiento mensual</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">Estado de pago SS y Nómina por empresa</p>
-      </header>
+      <PageHeader
+        title="Seguimiento mensual"
+        subtitle={`Estado de pago SS y Nómina · ${MESES[mes]} ${anio}`}
+      />
 
-      <fieldset className="mb-4 flex flex-wrap items-end gap-3">
+      <motion.fieldset
+        className="mb-5 flex flex-wrap items-end gap-3"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
         <legend className="sr-only">Filtros de período</legend>
-        <label className="text-sm">
-          <span className="block font-medium text-slate-700 dark:text-slate-300">Año</span>
-          <input
+        <div className="w-28">
+          <GlassInput
+            id="anio"
+            label="Año"
             type="number"
             value={anio}
             min={2020}
             max={2100}
             onChange={(e) => setAnio(Number(e.target.value))}
-            className="mt-1 w-24 px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
           />
-        </label>
-        <label className="text-sm">
-          <span className="block font-medium text-slate-700 dark:text-slate-300">Mes</span>
-          <select
+        </div>
+        <div className="w-40">
+          <GlassSelect
+            id="mes"
+            label="Mes"
             value={mes}
             onChange={(e) => setMes(Number(e.target.value))}
-            className="mt-1 px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
           >
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-              <option key={m} value={m}>{m}</option>
+              <option key={m} value={m}>{MESES[m]}</option>
             ))}
-          </select>
-        </label>
-      </fieldset>
-
-      {loading && <p role="status">Cargando…</p>}
-      {error && <p role="alert" className="text-rose-700 dark:text-rose-300">{error}</p>}
-
-      {!loading && !error && (
-        <div className="overflow-x-auto bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-            <caption className="sr-only">Seguimiento mensual</caption>
-            <thead className="bg-slate-50 dark:bg-slate-900/40">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Empresa</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">SS</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Plazo SS</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Pago SS</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Días mora</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Nómina</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-              {rows.map((s) => (
-                <tr key={`${s.nit9}-${s.anio}-${s.mes}`}>
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{s.nombre_empresa ?? s.nit9}</div>
-                    <div className="text-xs font-mono text-slate-500 dark:text-slate-400">{s.nit9}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {s.ss_estado && <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${BADGE[s.ss_estado]}`}>{s.ss_estado.replace("_", " ")}</span>}
-                  </td>
-                  <td className="px-4 py-3 text-sm">{s.ss_fecha_plazo ?? "—"}</td>
-                  <td className="px-4 py-3 text-sm">{s.ss_fecha_pago ?? "—"}</td>
-                  <td className="px-4 py-3 text-sm text-right">{s.ss_dias_mora ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    {s.nomina_estado && <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${BADGE[s.nomina_estado]}`}>{s.nomina_estado.replace("_", " ")}</span>}
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Sin registros para este período</td></tr>
-              )}
-            </tbody>
-          </table>
+          </GlassSelect>
         </div>
+      </motion.fieldset>
+
+      {!loading && rows.length > 0 && (
+        <motion.div
+          className="flex flex-wrap gap-3 mb-5"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.15 }}
+        >
+          {(["Cumple", "En_mora", "Pendiente"] as EstadoSeguimiento[]).map((s) => (
+            counts[s] !== undefined && (
+              <div key={s} className="flex items-center gap-2">
+                <StatusBadge label={`${STATUS_LABEL[s]}: ${counts[s]}`} variant={STATUS_VARIANT[s]} />
+              </div>
+            )
+          ))}
+        </motion.div>
       )}
+
+      {error && <div className="mb-4"><ErrorAlert message={error} /></div>}
+
+      <TableWrapper>
+        <table className="min-w-full">
+          <caption className="sr-only">Seguimiento mensual</caption>
+          <TableHead>
+            <tr>
+              <Th>Empresa</Th>
+              <Th>SS</Th>
+              <Th>Plazo SS</Th>
+              <Th>Pago SS</Th>
+              <Th>Días mora</Th>
+              <Th>Nómina</Th>
+            </tr>
+          </TableHead>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            {loading && <LoadingRow cols={6} />}
+            {!loading && rows.length === 0 && <EmptyRow cols={6} message="Sin registros para este período" />}
+            {!loading && rows.map((s, i) => (
+              <motion.tr
+                key={`${s.nit9}-${s.anio}-${s.mes}`}
+                className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2, delay: i * 0.02 }}
+              >
+                <Td>
+                  <div className="font-medium text-slate-900 dark:text-white">{s.nombre_empresa ?? s.nit9}</div>
+                  <div className="text-xs font-mono text-slate-400 dark:text-slate-500 mt-0.5">{s.nit9}</div>
+                </Td>
+                <Td>
+                  {s.ss_estado && (
+                    <StatusBadge
+                      label={STATUS_LABEL[s.ss_estado]}
+                      variant={STATUS_VARIANT[s.ss_estado]}
+                      pulse={s.ss_estado === "Pendiente"}
+                    />
+                  )}
+                </Td>
+                <Td className="text-sm tabular-nums text-slate-600 dark:text-slate-400">{s.ss_fecha_plazo ?? "—"}</Td>
+                <Td className="text-sm tabular-nums text-slate-600 dark:text-slate-400">{s.ss_fecha_pago ?? "—"}</Td>
+                <Td className="text-sm tabular-nums text-right font-medium">
+                  {s.ss_dias_mora != null ? (
+                    <span className={s.ss_dias_mora > 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-500"}>
+                      {s.ss_dias_mora}
+                    </span>
+                  ) : "—"}
+                </Td>
+                <Td>
+                  {s.nomina_estado && (
+                    <StatusBadge
+                      label={STATUS_LABEL[s.nomina_estado]}
+                      variant={STATUS_VARIANT[s.nomina_estado]}
+                      pulse={s.nomina_estado === "Pendiente"}
+                    />
+                  )}
+                </Td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </TableWrapper>
     </div>
   );
 }

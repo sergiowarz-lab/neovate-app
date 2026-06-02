@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { api, errorMessage } from "../lib/api";
 import type { Empresa } from "../types";
+import {
+  PageHeader, GlassInput, TableWrapper, TableHead, Th, Td,
+  StatusBadge, ErrorAlert, LoadingRow, EmptyRow,
+} from "../components/ui";
 
 export default function Empresas() {
   const [data, setData] = useState<Empresa[]>([]);
@@ -23,77 +28,77 @@ export default function Empresas() {
 
   return (
     <div>
-      <header className="mb-4">
-        <h1 className="text-2xl font-bold">Empresas aliadas</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">{data.length} resultados</p>
-      </header>
+      <PageHeader
+        title="Empresas aliadas"
+        subtitle={`${data.length} ${data.length === 1 ? "resultado" : "resultados"}`}
+      />
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <label className="flex-1">
-          <span className="sr-only">Buscar empresa por NIT o nombre</span>
-          <input
+      <motion.div
+        className="flex flex-col sm:flex-row gap-3 mb-5"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.1 }}
+      >
+        <div className="flex-1">
+          <label className="sr-only" htmlFor="search-empresa">Buscar empresa por NIT o nombre</label>
+          <GlassInput
+            id="search-empresa"
             type="search"
             placeholder="Buscar por NIT o nombre…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
             aria-label="Buscar empresa por NIT o nombre"
           />
-        </label>
-        <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+        </div>
+        <label className="inline-flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 backdrop-blur-sm cursor-pointer hover:border-brand-500 transition-colors">
           <input
             type="checkbox"
             checked={showInactive}
             onChange={(e) => setShowInactive(e.target.checked)}
-            className="w-4 h-4 text-brand-600 rounded"
+            className="w-4 h-4 rounded text-brand-600 border-slate-300 dark:border-white/20"
           />
           Mostrar inactivas
         </label>
-      </div>
+      </motion.div>
 
-      {loading && <p role="status" aria-live="polite">Cargando…</p>}
-      {error && <p role="alert" className="text-rose-700 dark:text-rose-300">{error}</p>}
+      {error && <div className="mb-4"><ErrorAlert message={error} /></div>}
 
-      {!loading && !error && (
-        <div className="overflow-x-auto bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-            <caption className="sr-only">Lista de empresas aliadas</caption>
-            <thead className="bg-slate-50 dark:bg-slate-900/40">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">NIT</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">NIT9</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Nombre</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Activa</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-              {data.map((e) => (
-                <tr key={e.nit} className="hover:bg-slate-50 dark:hover:bg-slate-900/40">
-                  <td className="px-4 py-3 font-mono text-sm">{e.nit}</td>
-                  <td className="px-4 py-3 font-mono text-sm text-slate-600 dark:text-slate-400">{e.nit9}</td>
-                  <td className="px-4 py-3">{e.nombre_empresa}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                        e.activa
-                          ? "bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200"
-                          : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      {e.activa ? "Sí" : "No"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {data.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-slate-500">Sin resultados</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <TableWrapper>
+        <table className="min-w-full">
+          <caption className="sr-only">Lista de empresas aliadas</caption>
+          <TableHead>
+            <tr>
+              <Th>NIT</Th>
+              <Th>NIT9</Th>
+              <Th>Nombre</Th>
+              <Th>Estado</Th>
+            </tr>
+          </TableHead>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            {loading && <LoadingRow cols={4} />}
+            {!loading && data.length === 0 && <EmptyRow cols={4} />}
+            {!loading && data.map((e, i) => (
+              <motion.tr
+                key={e.nit}
+                className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors"
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.25, delay: i * 0.03 }}
+              >
+                <Td className="font-mono text-sm font-medium text-slate-900 dark:text-white">{e.nit}</Td>
+                <Td className="font-mono text-sm text-slate-500 dark:text-slate-400">{e.nit9}</Td>
+                <Td className="font-medium">{e.nombre_empresa}</Td>
+                <Td>
+                  <StatusBadge
+                    label={e.activa ? "Activa" : "Inactiva"}
+                    variant={e.activa ? "success" : "neutral"}
+                  />
+                </Td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </TableWrapper>
     </div>
   );
 }

@@ -60,11 +60,13 @@ export default defineConfig({
         ],
       },
       devOptions: {
-        enabled: false,
+        enabled: true,
+        type: 'module',
       },
     }),
   ],
   server: {
+    host: true,
     port: 5173,
     proxy: {
       '/api': {

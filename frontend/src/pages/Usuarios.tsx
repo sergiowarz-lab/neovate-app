@@ -1,6 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { api, errorMessage } from "../lib/api";
 import type { Rol, Usuario } from "../types";
+import {
+  PageHeader, GlassPanel, GlassInput, GlassSelect, GlassButton,
+  TableWrapper, TableHead, Th, Td, StatusBadge,
+  ErrorAlert, LoadingRow, EmptyRow,
+} from "../components/ui";
 
 export default function Usuarios() {
   const [rows, setRows] = useState<Usuario[]>([]);
@@ -30,57 +36,89 @@ export default function Usuarios() {
 
   return (
     <div>
-      <header className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Usuarios</h1>
-        <button
-          type="button"
-          onClick={() => setShowForm((s) => !s)}
-          className="px-3 py-2 rounded-md bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium"
-        >
-          {showForm ? "Cancelar" : "Nuevo usuario"}
-        </button>
-      </header>
+      <PageHeader
+        title="Usuarios"
+        subtitle={`${rows.length} usuario${rows.length !== 1 ? "s" : ""} registrado${rows.length !== 1 ? "s" : ""}`}
+        action={
+          <GlassButton
+            variant={showForm ? "secondary" : "primary"}
+            onClick={() => setShowForm((s) => !s)}
+          >
+            {showForm ? "Cancelar" : "+ Nuevo usuario"}
+          </GlassButton>
+        }
+      />
 
-      {showForm && <UsuarioForm onCreated={() => { setShowForm(false); reload(); }} />}
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="overflow-hidden mb-6"
+          >
+            <UsuarioForm onCreated={() => { setShowForm(false); reload(); }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {loading && <p role="status">Cargando…</p>}
-      {error && <p role="alert" className="text-rose-700 dark:text-rose-300">{error}</p>}
+      {error && <div className="mb-4"><ErrorAlert message={error} /></div>}
 
-      {!loading && !error && (
-        <div className="overflow-x-auto bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-            <caption className="sr-only">Lista de usuarios</caption>
-            <thead className="bg-slate-50 dark:bg-slate-900/40">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Usuario</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Nombre</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Rol</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase">Activo</th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-semibold uppercase">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-              {rows.map((u) => (
-                <tr key={u.username}>
-                  <td className="px-4 py-3 font-mono text-sm">{u.username}</td>
-                  <td className="px-4 py-3">{u.nombre}</td>
-                  <td className="px-4 py-3 text-sm">{u.rol}</td>
-                  <td className="px-4 py-3 text-sm">{u.activo ? "Sí" : "No"}</td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => toggleActive(u)}
-                      className="text-sm text-brand-700 dark:text-brand-400 hover:underline"
-                      aria-label={u.activo ? `Desactivar ${u.username}` : `Activar ${u.username}`}
-                    >
-                      {u.activo ? "Desactivar" : "Activar"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <TableWrapper>
+        <table className="min-w-full">
+          <caption className="sr-only">Lista de usuarios</caption>
+          <TableHead>
+            <tr>
+              <Th>Usuario</Th>
+              <Th>Nombre</Th>
+              <Th>Rol</Th>
+              <Th>Estado</Th>
+              <Th right>Acciones</Th>
+            </tr>
+          </TableHead>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            {loading && <LoadingRow cols={5} />}
+            {!loading && rows.length === 0 && <EmptyRow cols={5} />}
+            {!loading && rows.map((u, i) => (
+              <motion.tr
+                key={u.username}
+                className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors"
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.25, delay: i * 0.04 }}
+              >
+                <Td className="font-mono text-sm font-medium text-slate-900 dark:text-white">{u.username}</Td>
+                <Td>{u.nombre}</Td>
+                <Td>
+                  <StatusBadge
+                    label={u.rol}
+                    variant={u.rol === "admin" ? "warning" : "info"}
+                  />
+                </Td>
+                <Td>
+                  <StatusBadge
+                    label={u.activo ? "Activo" : "Inactivo"}
+                    variant={u.activo ? "success" : "neutral"}
+                    pulse={u.activo}
+                  />
+                </Td>
+                <Td className="text-right">
+                  <GlassButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleActive(u)}
+                    aria-label={u.activo ? `Desactivar ${u.username}` : `Activar ${u.username}`}
+                  >
+                    {u.activo ? "Desactivar" : "Activar"}
+                  </GlassButton>
+                </Td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </TableWrapper>
     </div>
   );
 }
@@ -97,10 +135,10 @@ function UsuarioForm({ onCreated }: { onCreated: () => void }) {
     try {
       await api.post("/usuarios", {
         username: form.username,
-        nombre: form.nombre,
-        email: form.email || null,
+        nombre:   form.nombre,
+        email:    form.email || null,
         password: form.password,
-        rol: form.rol,
+        rol:      form.rol,
       });
       onCreated();
     } catch (err) {
@@ -111,36 +149,57 @@ function UsuarioForm({ onCreated }: { onCreated: () => void }) {
   }
 
   return (
-    <form onSubmit={submit} className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3 p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-      <label className="text-sm">
-        <span className="block font-medium">Usuario</span>
-        <input required pattern="[a-zA-Z0-9_.\-]+" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} className="mt-1 w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900" />
-      </label>
-      <label className="text-sm">
-        <span className="block font-medium">Nombre</span>
-        <input required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} className="mt-1 w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900" />
-      </label>
-      <label className="text-sm">
-        <span className="block font-medium">Email</span>
-        <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="mt-1 w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900" />
-      </label>
-      <label className="text-sm">
-        <span className="block font-medium">Contraseña inicial</span>
-        <input required minLength={8} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="mt-1 w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900" />
-      </label>
-      <label className="text-sm">
-        <span className="block font-medium">Rol</span>
-        <select value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value as Rol })} className="mt-1 w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900">
+    <GlassPanel as="form" onSubmit={submit} className="p-6">
+      <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-4">Nuevo usuario</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <GlassInput
+          id="new-username"
+          label="Usuario"
+          required
+          pattern="[a-zA-Z0-9_.\-]+"
+          value={form.username}
+          onChange={(e) => setForm({ ...form, username: e.target.value })}
+        />
+        <GlassInput
+          id="new-nombre"
+          label="Nombre"
+          required
+          value={form.nombre}
+          onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+        />
+        <GlassInput
+          id="new-email"
+          label="Email"
+          type="email"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+        />
+        <GlassInput
+          id="new-password"
+          label="Contraseña inicial"
+          type="password"
+          required
+          minLength={8}
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+        />
+        <GlassSelect
+          id="new-rol"
+          label="Rol"
+          value={form.rol}
+          onChange={(e) => setForm({ ...form, rol: e.target.value as Rol })}
+        >
           <option value="viewer">viewer</option>
           <option value="admin">admin</option>
-        </select>
-      </label>
-      <div className="md:col-span-2 flex items-center gap-3 mt-2">
-        <button type="submit" disabled={loading} className="px-4 py-2 rounded-md bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium disabled:opacity-60">
-          {loading ? "Guardando…" : "Crear"}
-        </button>
-        {error && <span role="alert" className="text-rose-700 dark:text-rose-300 text-sm">{error}</span>}
+        </GlassSelect>
       </div>
-    </form>
+
+      <div className="mt-5 flex items-center gap-3">
+        <GlassButton type="submit" disabled={loading}>
+          {loading ? "Guardando…" : "Crear usuario"}
+        </GlassButton>
+        {error && <ErrorAlert message={error} />}
+      </div>
+    </GlassPanel>
   );
 }
