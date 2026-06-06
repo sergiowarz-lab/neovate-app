@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import { useAuth } from "../auth/useAuth";
 import { useTheme } from "../theme/useTheme";
 import { useState } from "react";
+import { usePushNotifications } from "../hooks/usePushNotifications";
 import { AnimatePresence, motion } from "motion/react";
 
 /* ── Sidebar icons (inline SVG) ────────────────────────── */
@@ -54,6 +55,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { soportado, suscrito, suscribirse, desuscribirse, cargando } = usePushNotifications();
 
   const NAV: NavItem[] = [
     { to: "/",            label: "Dashboard",      Icon: IconDash,     end: true },
@@ -169,6 +171,22 @@ export default function Layout() {
           </div>
 
           <div className="ml-auto flex items-center gap-3">
+            {/* Botón notificaciones push */}
+            {soportado && (
+              <button
+                onClick={suscrito ? desuscribirse : suscribirse}
+                disabled={cargando}
+                title={suscrito ? "Desactivar notificaciones" : "Activar notificaciones"}
+                className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all text-sm
+                  ${suscrito
+                    ? "bg-brand-500/20 text-brand-600 dark:text-brand-400 hover:bg-rose-500/10 hover:text-rose-400"
+                    : "text-slate-400 dark:text-slate-600 hover:bg-brand-500/8 hover:text-brand-400"
+                  } disabled:opacity-50`}
+              >
+                {suscrito ? "🔔" : "🔕"}
+              </button>
+            )}
+
             {/* Date indicator */}
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
                             bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.07]

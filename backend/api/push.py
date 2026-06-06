@@ -67,3 +67,32 @@ def desuscribirse(
     if sub:
         db.delete(sub)
         db.commit()
+
+
+@router.post("/test", dependencies=[Depends(get_current_user)])
+def test_push(
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Envía una notificación push de prueba al usuario actual."""
+    subs = db.query(PushSubscription).filter(
+        PushSubscription.username == current_user.username
+    ).all()
+
+    if not subs:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "No tienes suscripciones push activas. Activa las notificaciones primero."
+        )
+
+    from backend.services.push_service import enviar_push
+    enviadas = sum(
+        1 for s in subs
+        if enviar_push(
+            s.subscription_json,
+            titulo="🔔 Notificación de prueba — Neovate",
+            cuerpo="Las notificaciones push están funcionando correctamente.",
+            tag="test",
+        )
+    )
+    return {"mensaje": f"Notificación enviada a {enviadas} dispositivo(s)"}
