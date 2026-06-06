@@ -20,8 +20,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install dependencies into package folder
-        run: pip install -r backend/requirements.txt --target=".python_packages/lib/site-packages"
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
 
       - name: Create deployment ZIP
         run: |
