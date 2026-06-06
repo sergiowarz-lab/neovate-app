@@ -172,20 +172,26 @@ export default function Layout() {
 
           <div className="ml-auto flex items-center gap-3">
             {/* Botón notificaciones push */}
-            {soportado && (
-              <button
-                onClick={suscrito ? desuscribirse : suscribirse}
-                disabled={cargando}
-                title={suscrito ? "Desactivar notificaciones" : "Activar notificaciones"}
-                className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all text-sm
-                  ${suscrito
-                    ? "bg-brand-500/20 text-brand-600 dark:text-brand-400 hover:bg-rose-500/10 hover:text-rose-400"
-                    : "text-slate-400 dark:text-slate-600 hover:bg-brand-500/8 hover:text-brand-400"
-                  } disabled:opacity-50`}
-              >
-                {suscrito ? "🔔" : "🔕"}
-              </button>
-            )}
+            <button
+              onClick={soportado ? (suscrito ? desuscribirse : suscribirse) : undefined}
+              disabled={cargando || !soportado}
+              title={
+                !soportado
+                  ? "Tu navegador no soporta notificaciones push. En iPhone, instala la app en el inicio."
+                  : suscrito
+                  ? "Desactivar notificaciones"
+                  : "Activar notificaciones"
+              }
+              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all text-sm
+                ${!soportado
+                  ? "text-slate-300 dark:text-slate-700 cursor-not-allowed"
+                  : suscrito
+                  ? "bg-brand-500/20 text-brand-600 dark:text-brand-400 hover:bg-rose-500/10 hover:text-rose-400"
+                  : "text-slate-400 dark:text-slate-600 hover:bg-brand-500/8 hover:text-brand-400"
+                } disabled:opacity-50`}
+            >
+              {suscrito ? "🔔" : "🔕"}
+            </button>
 
             {/* Date indicator */}
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
