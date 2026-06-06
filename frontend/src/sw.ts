@@ -21,7 +21,6 @@ self.addEventListener("push", (event) => {
     icon: "/pwa-192x192.png",
     badge: "/pwa-192x192.png",
     tag: data.tag ?? "neovate",
-    renotify: true,
     data: { url: "/" },
   };
 

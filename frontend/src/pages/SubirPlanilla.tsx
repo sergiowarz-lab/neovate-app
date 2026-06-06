@@ -160,6 +160,7 @@ export default function SubirPlanilla() {
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">NIT Empresa</label>
             <GlassInput
+              id="upload-nit"
               value={nit}
               onChange={(e) => setNit(e.target.value)}
               placeholder="Ej: 900123456"
@@ -171,7 +172,7 @@ export default function SubirPlanilla() {
 
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Operador</label>
-            <GlassSelect value={operador} onChange={(e) => setOperador(e.target.value)} required>
+            <GlassSelect id="upload-operador" value={operador} onChange={(e) => setOperador(e.target.value)} required>
               <option value="">Selecciona un operador…</option>
               {operadores.map((op) => (
                 <option key={op} value={op}>{op}</option>
@@ -182,7 +183,7 @@ export default function SubirPlanilla() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Mes</label>
-              <GlassSelect value={mes} onChange={(e) => setMes(e.target.value)} required>
+              <GlassSelect id="upload-mes" value={mes} onChange={(e) => setMes(e.target.value)} required>
                 {MESES.map((m) => (
                   <option key={m.value} value={m.value}>{m.label}</option>
                 ))}
@@ -191,6 +192,7 @@ export default function SubirPlanilla() {
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Año</label>
               <GlassInput
+                id="upload-anio"
                 type="number"
                 value={anio}
                 onChange={(e) => setAnio(e.target.value)}
