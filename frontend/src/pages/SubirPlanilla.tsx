@@ -68,7 +68,9 @@ export default function SubirPlanilla() {
     fd.append("anio", anio);
 
     try {
-      const { data } = await api.post<{ reporte_id: string; hoja_destino: string }>("/planillas/upload", fd);
+      const { data } = await api.post<{ reporte_id: string; hoja_destino: string }>("/planillas/upload", fd, {
+        headers: { "Content-Type": undefined },
+      });
       iniciarPolling(data.reporte_id);
     } catch (err) {
       setError(errorMessage(err, "Error al subir el archivo"));
@@ -90,7 +92,9 @@ export default function SubirPlanilla() {
     fd.append("texto_extraido", textoOcr);
 
     try {
-      const { data } = await api.post<{ reporte_id: string }>("/planillas/upload-ocr", fd);
+      const { data } = await api.post<{ reporte_id: string }>("/planillas/upload-ocr", fd, {
+        headers: { "Content-Type": undefined },
+      });
       iniciarPolling(data.reporte_id);
     } catch (err) {
       setError(errorMessage(err, "Error al procesar la imagen"));
