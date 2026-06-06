@@ -52,7 +52,10 @@ export default function SubirPlanilla() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!archivo) return;
+    if (!archivo) {
+      setError("Debes seleccionar un archivo PDF antes de continuar.");
+      return;
+    }
     setError(null);
     setResultado(null);
     setEnviando(true);
@@ -210,8 +213,7 @@ export default function SubirPlanilla() {
               <input
                 type="file"
                 accept=".pdf"
-                onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
-                required
+                onChange={(e) => { setArchivo(e.target.files?.[0] ?? null); setError(null); }}
                 className="block w-full text-sm text-slate-600 dark:text-slate-400
                            file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0
                            file:text-xs file:font-medium
