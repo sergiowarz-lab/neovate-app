@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.deps import get_current_user, require_can_upload
 from backend.core.database import get_db
-from backend.models import EstadoReporte, ReporteNomina, ReporteSS, RolUsuario, Usuario
+from backend.models import EmpresaAliada, EstadoReporte, ReporteNomina, ReporteSS, RolUsuario, Usuario
 from backend.schemas.reporte import UploadResponse, UploadStatusResponse
 from backend.services.procesador import procesar_pdf
 from backend.services.validadores.parser_nombre import MESES
@@ -95,6 +95,18 @@ def upload(
     )
 
 
+def _asegurar_empresa(db: Session, nit: str, nit9: str) -> None:
+    """Crea la empresa en empresa_aliada si no existe (necesario para la FK de los reportes)."""
+    if not db.query(EmpresaAliada).filter(EmpresaAliada.nit9 == nit9).first():
+        db.add(EmpresaAliada(
+            nit=nit,
+            nit9=nit9,
+            nombre_empresa=f"Empresa {nit9}",
+            activa=True,
+        ))
+        db.flush()
+
+
 def _crear_registro_procesando(
     db: Session,
     reporte_id: str,
@@ -106,6 +118,7 @@ def _crear_registro_procesando(
     hoja: str,
 ) -> None:
     try:
+        _asegurar_empresa(db, nit, nit9)
         if hoja == "Nomina":
             db.add(ReporteNomina(
                 id=reporte_id,

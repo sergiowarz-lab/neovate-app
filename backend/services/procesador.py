@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from backend.core.database import SessionLocal
-from backend.models import EstadoReporte, ReporteNomina, ReporteSS
+from backend.models import EmpresaAliada, EstadoReporte, ReporteNomina, ReporteSS
 from backend.services.cumplimiento import nit9, parse_fecha
 from backend.services.validadores import (  # noqa: F401  — registra validadores
     aportes_en_linea, asopagos, compensar_miplanilla, enlace, nomina,
@@ -123,6 +123,12 @@ def _notificar_mora_si_aplica(nit9: str) -> None:
         log.exception("Error verificando mora para nit9=%s", nit9)
 
 
+def _asegurar_empresa(db, nit_full: str, nit_9: str) -> None:
+    if not db.query(EmpresaAliada).filter(EmpresaAliada.nit9 == nit_9).first():
+        db.add(EmpresaAliada(nit=nit_full, nit9=nit_9, nombre_empresa=f"Empresa {nit_9}", activa=True))
+        db.flush()
+
+
 def _persistir_resultado(metadata, validador, ok: bool, errores: list[str], hoja: str) -> None:
     fecha_pago = parse_fecha(validador.fecha_pago)
     nit_full = metadata["nit"]
@@ -132,6 +138,7 @@ def _persistir_resultado(metadata, validador, ok: bool, errores: list[str], hoja
     estado = EstadoReporte.VALIDADO_OK if ok else EstadoReporte.RECHAZADO
 
     with SessionLocal() as db:
+        _asegurar_empresa(db, nit_full, nit_9)
         if hoja == "Nomina":
             existente = db.get(ReporteNomina, metadata["id"])
             if existente:
@@ -180,11 +187,13 @@ def _persistir_resultado(metadata, validador, ok: bool, errores: list[str], hoja
 
 def _persistir_sin_validador(metadata) -> None:
     nit_full = metadata["nit"]
+    nit_9 = nit9(nit_full)
     with SessionLocal() as db:
+        _asegurar_empresa(db, nit_full, nit_9)
         db.merge(ReporteSS(
             id=metadata["id"],
             nit=nit_full,
-            nit9=nit9(nit_full),
+            nit9=nit_9,
             anio=int(metadata["anio"]),
             mes_obligacion=int(metadata["mes"]),
             operador=metadata["operador"],
