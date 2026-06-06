@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { api, errorMessage } from "../lib/api";
+import { useAuth } from "../auth/useAuth";
 import type { EstadoReporte, ReporteNomina, ReporteSS } from "../types";
 import {
   PageHeader, TableWrapper, TableHead, Th, Td,
@@ -10,12 +11,14 @@ import {
 type Tab = "ss" | "nomina";
 
 const ESTADO_LABEL: Record<EstadoReporte, string> = {
+  Procesando:          "Procesando",
   Validado_ok:         "Validado",
   Rechazado:           "Rechazado",
   Validado_individual: "Ind.",
 };
 
-const ESTADO_VARIANT: Record<EstadoReporte, "success" | "danger" | "info"> = {
+const ESTADO_VARIANT: Record<EstadoReporte, "success" | "danger" | "info" | "warning"> = {
+  Procesando:          "warning",
   Validado_ok:         "success",
   Rechazado:           "danger",
   Validado_individual: "info",
@@ -27,11 +30,18 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export default function Historial() {
+  const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("ss");
   const [ss, setSS] = useState<ReporteSS[]>([]);
   const [nomina, setNomina] = useState<ReporteNomina[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [descargando, setDescargando] = useState(false);
+
+  const anioActual = new Date().getFullYear();
+  const mesActual = new Date().getMonth() + 1;
+
+  const canExport = user?.rol === "admin" || user?.rol === "analista";
 
   useEffect(() => {
     setLoading(true);
@@ -46,11 +56,58 @@ export default function Historial() {
       .finally(() => setLoading(false));
   }, [tab]);
 
+  async function descargarExcel(tipo: "resumen" | "mora") {
+    setDescargando(true);
+    try {
+      const resp = await api.get(`/reportes/exportar/${tipo}`, {
+        params: { anio: anioActual, mes: mesActual },
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(new Blob([resp.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `neovate_${tipo}_${anioActual}_${String(mesActual).padStart(2, "0")}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(errorMessage(e, "Error al descargar Excel"));
+    } finally {
+      setDescargando(false);
+    }
+  }
+
   const rows = tab === "ss" ? ss : nomina;
 
   return (
     <div>
-      <PageHeader title="Historial de reportes" subtitle="Registros de Seguridad Social y Nómina" />
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
+        <PageHeader title="Historial de reportes" subtitle="Registros de Seguridad Social y Nómina" />
+
+        {canExport && (
+          <div className="flex gap-2 mt-1">
+            <button
+              onClick={() => descargarExcel("resumen")}
+              disabled={descargando}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                         bg-emerald-500/10 text-emerald-700 dark:text-emerald-400
+                         border border-emerald-300/50 dark:border-emerald-700/50
+                         hover:bg-emerald-500/20 disabled:opacity-50 transition-all"
+            >
+              📊 Resumen Excel
+            </button>
+            <button
+              onClick={() => descargarExcel("mora")}
+              disabled={descargando}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                         bg-rose-500/10 text-rose-700 dark:text-rose-400
+                         border border-rose-300/50 dark:border-rose-700/50
+                         hover:bg-rose-500/20 disabled:opacity-50 transition-all"
+            >
+              ⚠️ Mora Excel
+            </button>
+          </div>
+        )}
+      </div>
 
       <motion.div
         role="tablist"

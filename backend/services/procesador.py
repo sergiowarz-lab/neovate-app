@@ -34,10 +34,14 @@ def procesar_pdf(ruta: str, eliminar_temp: bool = True) -> None:
     se registra en log y NO propaga (el cliente ya recibió su 202).
     """
     ruta_path = Path(ruta)
+    reporte_id: str | None = None
+    hoja: str = "SS"
     try:
         metadata = parsear_nombre(ruta_path.name)
+        reporte_id = metadata["id"]
         texto = extraer_texto_completo(ruta_path)
         validador = obtener_validador(metadata["operador"], texto, metadata)
+        hoja = obtener_hoja_destino(metadata["operador"])
 
         if validador is None:
             _persistir_sin_validador(metadata)
@@ -45,17 +49,78 @@ def procesar_pdf(ruta: str, eliminar_temp: bool = True) -> None:
             return
 
         ok, errores = validador.validar()
-        hoja = obtener_hoja_destino(metadata["operador"])
         _persistir_resultado(metadata, validador, ok, errores, hoja)
         log.info("Validacion %s id=%s estado=%s", metadata["operador"], metadata["id"], "OK" if ok else "RECHAZADO")
+
+        if ok:
+            _notificar_mora_si_aplica(metadata["nit"][:9])
+
     except Exception:
         log.exception("Error procesando PDF %s", ruta_path.name)
+        if reporte_id:
+            _marcar_error(reporte_id, hoja)
     finally:
         if eliminar_temp and ruta_path.exists():
             try:
                 ruta_path.unlink()
             except OSError:
                 log.warning("No se pudo eliminar archivo temporal %s", ruta_path)
+
+
+def procesar_texto_ocr(
+    reporte_id: str,
+    nit_val: str,
+    operador: str,
+    mes: str,
+    anio: str,
+    timestamp: str,
+    texto: str,
+) -> None:
+    """Procesa texto extraído por OCR (móvil) en lugar de un PDF."""
+    metadata = {
+        "id": reporte_id,
+        "nit": nit_val,
+        "operador": operador,
+        "mes": mes,
+        "anio": anio,
+        "timestamp": timestamp,
+    }
+    hoja = obtener_hoja_destino(operador)
+    try:
+        validador = obtener_validador(operador, texto, metadata)
+        if validador is None:
+            _persistir_sin_validador(metadata)
+            log.warning("OCR sin validador para operador=%s id=%s", operador, reporte_id)
+            return
+
+        ok, errores = validador.validar()
+        _persistir_resultado(metadata, validador, ok, errores, hoja)
+        log.info("OCR Validacion %s id=%s estado=%s", operador, reporte_id, "OK" if ok else "RECHAZADO")
+    except Exception:
+        log.exception("Error procesando OCR id=%s", reporte_id)
+        _marcar_error(reporte_id, hoja)
+
+
+def _marcar_error(reporte_id: str, hoja: str) -> None:
+    """Marca el registro PROCESANDO como RECHAZADO cuando hay una excepción inesperada."""
+    with SessionLocal() as db:
+        if hoja == "Nomina":
+            rep = db.get(ReporteNomina, reporte_id)
+        else:
+            rep = db.get(ReporteSS, reporte_id)
+        if rep and rep.estado == EstadoReporte.PROCESANDO:
+            rep.estado = EstadoReporte.RECHAZADO
+            rep.rechazo = "Error interno al procesar el archivo"
+            db.commit()
+
+
+def _notificar_mora_si_aplica(nit9: str) -> None:
+    """Dispara notificaciones push si la empresa está actualmente en mora."""
+    try:
+        from backend.services.mora_checker import verificar_mora_empresa
+        verificar_mora_empresa(nit9_val)
+    except Exception:
+        log.exception("Error verificando mora para nit9=%s", nit9_val)
 
 
 def _persistir_resultado(metadata, validador, ok: bool, errores: list[str], hoja: str) -> None:

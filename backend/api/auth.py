@@ -43,6 +43,7 @@ def login(
         primer_login=user.primer_login,
         rol=user.rol,
         nombre=user.nombre,
+        nit_empresa=user.nit_empresa,
     )
 
 
@@ -54,6 +55,7 @@ def me(user: Usuario = Depends(get_current_user)) -> CurrentUserInfo:
         email=user.email,
         rol=user.rol,
         primer_login=user.primer_login,
+        nit_empresa=user.nit_empresa,
     )
 
 

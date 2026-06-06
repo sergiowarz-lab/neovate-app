@@ -38,8 +38,22 @@ def get_current_user(
 
 def require_admin(user: Usuario = Depends(get_current_user)) -> Usuario:
     if user.rol != RolUsuario.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Se requiere rol admin")
+    return user
+
+
+def require_admin_or_analista(user: Usuario = Depends(get_current_user)) -> Usuario:
+    if user.rol not in (RolUsuario.ADMIN, RolUsuario.ANALISTA):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requiere rol admin",
+            status_code=status.HTTP_403_FORBIDDEN, detail="Se requiere rol admin o analista"
+        )
+    return user
+
+
+def require_can_upload(user: Usuario = Depends(get_current_user)) -> Usuario:
+    """Permite subir planillas a admin, analista y empresa."""
+    if user.rol not in (RolUsuario.ADMIN, RolUsuario.ANALISTA, RolUsuario.EMPRESA):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Sin permiso para cargar planillas"
         )
     return user

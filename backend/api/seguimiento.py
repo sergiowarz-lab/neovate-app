@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.deps import get_current_user
 from backend.core.database import get_db
-from backend.models import EstadoSeguimiento, SeguimientoMensual
+from backend.models import EstadoSeguimiento, RolUsuario, SeguimientoMensual, Usuario
 from backend.schemas.seguimiento import DashboardKPIs, SeguimientoMensualOut
 
 
@@ -22,8 +22,13 @@ def listar(
     anio: int | None = None,
     mes: int | None = None,
     nit9: str | None = None,
+    current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[SeguimientoMensual]:
+    # Empresa solo ve su propia data
+    if current_user.rol == RolUsuario.EMPRESA:
+        nit9 = current_user.nit_empresa
+
     stmt = select(SeguimientoMensual)
     if anio is not None:
         stmt = stmt.where(SeguimientoMensual.anio == anio)
@@ -43,6 +48,7 @@ def listar(
 def kpis(
     anio: int | None = None,
     mes: int | None = None,
+    current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> DashboardKPIs:
     hoy = date.today()
@@ -54,8 +60,13 @@ def kpis(
     ).where(
         SeguimientoMensual.anio == anio_q,
         SeguimientoMensual.mes == mes_q,
-    ).group_by(SeguimientoMensual.ss_estado)
+    )
 
+    # Empresa solo ve sus propios KPIs
+    if current_user.rol == RolUsuario.EMPRESA and current_user.nit_empresa:
+        base = base.where(SeguimientoMensual.nit9 == current_user.nit_empresa)
+
+    base = base.group_by(SeguimientoMensual.ss_estado)
     counts: dict[EstadoSeguimiento | None, int] = dict(db.execute(base).all())
     total = sum(counts.values())
 
