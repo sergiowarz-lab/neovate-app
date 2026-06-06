@@ -19,3 +19,5 @@ frontend/dev-dist/
 .idea/
 .DS_Store
 Thumbs.db
+node_modules/
+frontend-log.txt
