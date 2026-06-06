@@ -22,10 +22,26 @@ log = logging.getLogger("neovate.main")
 scheduler = AsyncIOScheduler()
 
 
+def _run_migrations() -> None:
+    """Ejecuta alembic upgrade head al iniciar — idempotente, seguro en producción."""
+    try:
+        from pathlib import Path
+        from alembic.config import Config
+        from alembic import command
+
+        ini = Path(__file__).parent / "alembic.ini"
+        cfg = Config(str(ini))
+        command.upgrade(cfg, "head")
+        log.info("Migraciones aplicadas correctamente")
+    except Exception:
+        log.exception("Error ejecutando migraciones — la app continuará de todas formas")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _run_migrations()
+
     from backend.services.mora_checker import verificar_todas_las_moras
-    # Job diario a las 8:00 AM
     scheduler.add_job(verificar_todas_las_moras, "cron", hour=8, minute=0, id="mora_diaria")
     scheduler.start()
     log.info("Scheduler iniciado — job mora_diaria activo")
