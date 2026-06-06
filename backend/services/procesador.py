@@ -118,9 +118,9 @@ def _notificar_mora_si_aplica(nit9: str) -> None:
     """Dispara notificaciones push si la empresa está actualmente en mora."""
     try:
         from backend.services.mora_checker import verificar_mora_empresa
-        verificar_mora_empresa(nit9_val)
+        verificar_mora_empresa(nit9)
     except Exception:
-        log.exception("Error verificando mora para nit9=%s", nit9_val)
+        log.exception("Error verificando mora para nit9=%s", nit9)
 
 
 def _persistir_resultado(metadata, validador, ok: bool, errores: list[str], hoja: str) -> None:
