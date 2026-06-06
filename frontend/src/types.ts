@@ -1,6 +1,6 @@
-export type Rol = "admin" | "viewer";
+export type Rol = "admin" | "viewer" | "analista" | "empresa";
 
-export type EstadoReporte = "Validado_ok" | "Rechazado" | "Validado_individual";
+export type EstadoReporte = "Procesando" | "Validado_ok" | "Rechazado" | "Validado_individual";
 export type EstadoSeguimiento = "Cumple" | "En_mora" | "Pendiente";
 export type CoberturaFlag = "SI" | "NO" | "N/A";
 
@@ -10,6 +10,7 @@ export interface CurrentUser {
   email: string | null;
   rol: Rol;
   primer_login: boolean;
+  nit_empresa: string | null;
 }
 
 export interface TokenResponse {
@@ -19,6 +20,7 @@ export interface TokenResponse {
   primer_login: boolean;
   rol: Rol;
   nombre: string;
+  nit_empresa: string | null;
 }
 
 export interface Empresa {
@@ -95,8 +97,16 @@ export interface Usuario {
   nombre: string;
   email: string | null;
   rol: Rol;
+  nit_empresa: string | null;
   activo: boolean;
   primer_login: boolean;
   fecha_creacion: string;
   ultimo_acceso: string | null;
+}
+
+export interface UploadStatus {
+  reporte_id: string;
+  estado: EstadoReporte;
+  hoja_destino: string;
+  rechazo: string | null;
 }

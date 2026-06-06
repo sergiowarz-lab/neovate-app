@@ -90,7 +90,7 @@ export function GlassSelect({ label, id, children, className = "", ...props }: G
       <select
         id={id}
         {...props}
-        className={`w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-slate-100 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-colors ${className}`}
+        className={`w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-[#1a1825] text-slate-900 dark:text-slate-100 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-colors [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-[#1a1825] dark:[&>option]:text-slate-100 ${className}`}
       >
         {children}
       </select>

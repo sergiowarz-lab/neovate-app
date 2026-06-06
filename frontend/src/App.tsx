@@ -8,6 +8,7 @@ import Empresas from "./pages/Empresas";
 import Historial from "./pages/Historial";
 import Seguimiento from "./pages/Seguimiento";
 import Usuarios from "./pages/Usuarios";
+import SubirPlanilla from "./pages/SubirPlanilla";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -20,12 +21,24 @@ export default function App() {
 
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
-          <Route path="empresas" element={<Empresas />} />
           <Route path="historial" element={<Historial />} />
           <Route path="seguimiento" element={<Seguimiento />} />
+
+          {/* Empresas: visible para admin, analista y viewer — no para empresa */}
+          <Route element={<ProtectedRoute allowedRoles={["admin", "analista", "viewer"]} />}>
+            <Route path="empresas" element={<Empresas />} />
+          </Route>
+
+          {/* Subir planilla: admin, analista y empresa */}
+          <Route element={<ProtectedRoute allowedRoles={["admin", "analista", "empresa"]} />}>
+            <Route path="subir" element={<SubirPlanilla />} />
+          </Route>
+
+          {/* Usuarios: solo admin */}
           <Route element={<ProtectedRoute adminOnly />}>
             <Route path="usuarios" element={<Usuarios />} />
           </Route>
+
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>

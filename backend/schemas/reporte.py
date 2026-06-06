@@ -47,3 +47,12 @@ class UploadResponse(BaseModel):
     operador_detectado: str | None = None
     hoja_destino: str
     mensaje: str = "PDF recibido y encolado para validación"
+
+
+class UploadStatusResponse(BaseModel):
+    """Respuesta del endpoint de polling de estado."""
+
+    reporte_id: str
+    estado: EstadoReporte
+    hoja_destino: str
+    rechazo: str | None = None

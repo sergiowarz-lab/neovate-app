@@ -74,13 +74,14 @@ export default function Usuarios() {
               <Th>Usuario</Th>
               <Th>Nombre</Th>
               <Th>Rol</Th>
+              <Th>NIT9</Th>
               <Th>Estado</Th>
               <Th right>Acciones</Th>
             </tr>
           </TableHead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {loading && <LoadingRow cols={5} />}
-            {!loading && rows.length === 0 && <EmptyRow cols={5} />}
+            {loading && <LoadingRow cols={6} />}
+            {!loading && rows.length === 0 && <EmptyRow cols={6} />}
             {!loading && rows.map((u, i) => (
               <motion.tr
                 key={u.username}
@@ -94,9 +95,10 @@ export default function Usuarios() {
                 <Td>
                   <StatusBadge
                     label={u.rol}
-                    variant={u.rol === "admin" ? "warning" : "info"}
+                    variant={ROL_VARIANT[u.rol] ?? "neutral"}
                   />
                 </Td>
+                <Td className="font-mono text-xs text-slate-400">{u.nit_empresa ?? "—"}</Td>
                 <Td>
                   <StatusBadge
                     label={u.activo ? "Activo" : "Inactivo"}
@@ -123,22 +125,36 @@ export default function Usuarios() {
   );
 }
 
+const ROL_VARIANT: Record<string, "warning" | "info" | "success" | "neutral"> = {
+  admin: "warning", analista: "info", empresa: "success", viewer: "neutral",
+};
+
 function UsuarioForm({ onCreated }: { onCreated: () => void }) {
-  const [form, setForm] = useState({ username: "", nombre: "", email: "", password: "", rol: "viewer" as Rol });
+  const [form, setForm] = useState({
+    username: "", nombre: "", email: "", password: "",
+    rol: "viewer" as Rol, nit_empresa: "",
+  });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const needsNit = form.rol === "empresa";
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    if (needsNit && !form.nit_empresa) {
+      setError("El rol 'empresa' requiere un NIT9 asociado");
+      return;
+    }
     setLoading(true);
     try {
       await api.post("/usuarios", {
-        username: form.username,
-        nombre:   form.nombre,
-        email:    form.email || null,
-        password: form.password,
-        rol:      form.rol,
+        username:    form.username,
+        nombre:      form.nombre,
+        email:       form.email || null,
+        password:    form.password,
+        rol:         form.rol,
+        nit_empresa: needsNit ? form.nit_empresa || null : null,
       });
       onCreated();
     } catch (err) {
@@ -190,8 +206,21 @@ function UsuarioForm({ onCreated }: { onCreated: () => void }) {
           onChange={(e) => setForm({ ...form, rol: e.target.value as Rol })}
         >
           <option value="viewer">viewer</option>
+          <option value="analista">analista</option>
+          <option value="empresa">empresa</option>
           <option value="admin">admin</option>
         </GlassSelect>
+        {needsNit && (
+          <GlassInput
+            id="new-nit"
+            label="NIT9 Empresa (9 dígitos)"
+            required
+            maxLength={9}
+            pattern="\d{9}"
+            value={form.nit_empresa}
+            onChange={(e) => setForm({ ...form, nit_empresa: e.target.value })}
+          />
+        )}
       </div>
 
       <div className="mt-5 flex items-center gap-3">

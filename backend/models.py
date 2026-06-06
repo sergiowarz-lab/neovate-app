@@ -33,6 +33,7 @@ from backend.core.database import Base
 
 
 class EstadoReporte(str, PyEnum):
+    PROCESANDO = "Procesando"
     VALIDADO_OK = "Validado_ok"
     RECHAZADO = "Rechazado"
     VALIDADO_INDIVIDUAL = "Validado_individual"
@@ -53,6 +54,8 @@ class CoberturaFlag(str, PyEnum):
 class RolUsuario(str, PyEnum):
     ADMIN = "admin"
     VIEWER = "viewer"
+    ANALISTA = "analista"
+    EMPRESA = "empresa"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -260,9 +263,29 @@ class Usuario(Base):
     rol: Mapped[RolUsuario] = mapped_column(
         Enum(RolUsuario, name="rol_usuario"), nullable=False, default=RolUsuario.VIEWER
     )
+    nit_empresa: Mapped[str | None] = mapped_column(
+        CHAR(9), ForeignKey("empresa_aliada.nit9"), nullable=True
+    )
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     primer_login: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     fecha_creacion: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )
     ultimo_acceso: Mapped[datetime | None] = mapped_column(DateTime)
+
+    push_subscriptions: Mapped[list["PushSubscription"]] = relationship(
+        back_populates="usuario", cascade="all, delete-orphan"
+    )
+
+
+class PushSubscription(Base):
+    __tablename__ = "push_subscription"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(
+        String(50), ForeignKey("usuario.username"), nullable=False, index=True
+    )
+    subscription_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    usuario: Mapped["Usuario"] = relationship(back_populates="push_subscriptions")

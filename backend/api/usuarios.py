@@ -30,6 +30,7 @@ def crear(payload: UsuarioCreate, db: Session = Depends(get_db)) -> Usuario:
         email=str(payload.email) if payload.email else None,
         password_hash=hash_password(payload.password),
         rol=payload.rol,
+        nit_empresa=payload.nit_empresa,
         activo=True,
         primer_login=True,
     )

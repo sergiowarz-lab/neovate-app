@@ -27,7 +27,12 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: str = "http://localhost:5173"
 
-    DB_SSLMODE: str = "require"   # ← añade esta línea
+    DB_SSLMODE: str = "require"
+
+    # Web Push / VAPID  (genera con: python -m backend.scripts.generate_vapid_keys)
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_CLAIMS_SUB: str = "mailto:admin@neovate.co"
 
     @property
     def database_url(self) -> str:

@@ -15,6 +15,7 @@ class TokenResponse(BaseModel):
     primer_login: bool
     rol: RolUsuario
     nombre: str
+    nit_empresa: str | None = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -28,3 +29,4 @@ class CurrentUserInfo(BaseModel):
     email: str | None
     rol: RolUsuario
     primer_login: bool
+    nit_empresa: str | None = None

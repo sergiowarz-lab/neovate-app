@@ -12,6 +12,7 @@ class UsuarioOut(BaseModel):
     nombre: str
     email: str | None
     rol: RolUsuario
+    nit_empresa: str | None
     activo: bool
     primer_login: bool
     fecha_creacion: datetime
@@ -24,6 +25,7 @@ class UsuarioCreate(BaseModel):
     email: EmailStr | None = None
     password: str = Field(min_length=8, max_length=128)
     rol: RolUsuario = RolUsuario.VIEWER
+    nit_empresa: str | None = Field(default=None, max_length=9)
 
 
 class UsuarioUpdate(BaseModel):
@@ -31,3 +33,4 @@ class UsuarioUpdate(BaseModel):
     email: EmailStr | None = None
     rol: RolUsuario | None = None
     activo: bool | None = None
+    nit_empresa: str | None = None

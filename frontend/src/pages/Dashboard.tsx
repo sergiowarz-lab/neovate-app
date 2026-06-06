@@ -128,12 +128,14 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   const now = new Date();
-  const [anio] = useState(now.getFullYear());
-  const [mes]  = useState(now.getMonth() + 1);
+  const [anio, setAnio] = useState(now.getFullYear());
+  const [mes, setMes]   = useState(now.getMonth() + 1);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     Promise.all([
-      api.get<DashboardKPIs>("/seguimiento/kpis"),
+      api.get<DashboardKPIs>("/seguimiento/kpis", { params: { anio, mes } }),
       api.get<SeguimientoMensual[]>("/seguimiento", { params: { anio, mes } }),
     ])
       .then(([k, s]) => { setKpis(k.data); setRows(s.data); })
@@ -212,11 +214,26 @@ export default function Dashboard() {
           </p>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-[#e8e6f0]">Dashboard</h1>
         </div>
-        <div className="text-xs text-slate-400 dark:text-slate-500 text-right">
-          <p className="font-medium text-slate-600 dark:text-slate-400">
-            {MESES_FULL[kpis?.periodo_mes ?? mes]} {kpis?.periodo_anio ?? anio}
-          </p>
-          <p>Período activo</p>
+        {/* Selector de período */}
+        <div className="flex items-center gap-2">
+          <select
+            value={mes}
+            onChange={(e) => setMes(Number(e.target.value))}
+            className="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1825] text-slate-700 dark:text-slate-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/30 [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-[#1a1825] dark:[&>option]:text-slate-100"
+          >
+            {MESES_FULL.slice(1).map((m, i) => (
+              <option key={i + 1} value={i + 1}>{m}</option>
+            ))}
+          </select>
+          <select
+            value={anio}
+            onChange={(e) => setAnio(Number(e.target.value))}
+            className="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1825] text-slate-700 dark:text-slate-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/30 [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-[#1a1825] dark:[&>option]:text-slate-100"
+          >
+            {[2025, 2026, 2027].map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
         </div>
       </motion.div>
 

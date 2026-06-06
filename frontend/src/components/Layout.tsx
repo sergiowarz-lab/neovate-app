@@ -31,6 +31,11 @@ const IconUsers = () => (
     <path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm8 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM6 12a6 6 0 0 0-5.916 5h11.832A6 6 0 0 0 6 12zm8 0a5.97 5.97 0 0 0-2.943.775A7.97 7.97 0 0 1 13.6 17H20a6 6 0 0 0-6-5z"/>
   </svg>
 );
+const IconUpload = () => (
+  <svg viewBox="0 0 20 20" fill="currentColor" className="w-[18px] h-[18px]">
+    <path fillRule="evenodd" d="M3 17a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1zM6.293 6.707a1 1 0 0 1 0-1.414l3-3a1 1 0 0 1 1.414 0l3 3a1 1 0 0 1-1.414 1.414L11 5.414V13a1 1 0 1 1-2 0V5.414L7.707 6.707a1 1 0 0 1-1.414 0z" clipRule="evenodd"/>
+  </svg>
+);
 const IconSun  = () => <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M10 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm4.95 2.636a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zM17 10a1 1 0 0 1-1 1h-1a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1zm-2.636 4.95a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 0 1 1.414-1.414l.707.707a1 1 0 0 1 0 1.414zM10 15a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm-4.95-1.05a1 1 0 0 1 0-1.414l.707-.707a1 1 0 0 1 1.414 1.414l-.707.707a1 1 0 0 1-1.414 0zM5 10a1 1 0 0 1-1 1H3a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1zm-.636-4.95a1 1 0 0 1 1.414 0l.707.707A1 1 0 0 1 5.071 7.17l-.707-.707a1 1 0 0 1 0-1.414zM10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" clipRule="evenodd"/></svg>;
 const IconMoon = () => <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M17.293 13.293A8 8 0 0 1 6.707 2.707a8.001 8.001 0 1 0 10.586 10.586z"/></svg>;
 const IconLogout = () => <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M3 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h7a1 1 0 1 1 0 2H3a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3h7a1 1 0 1 1 0 2H3zm11.293 2.293a1 1 0 0 1 1.414 0l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L16.586 10 14.293 7.707a1 1 0 0 1 0-1.414z" clipRule="evenodd"/></svg>;
@@ -40,7 +45,7 @@ type NavItem = { to: string; label: string; Icon: React.FC; end?: boolean };
 const ROUTE_NAMES: Record<string, string> = {
   "/": "Dashboard", "/empresas": "Empresas", "/historial": "Historial",
   "/seguimiento": "Seguimiento", "/usuarios": "Usuarios",
-  "/cambiar-password": "Cambiar Contraseña",
+  "/subir": "Subir Planilla", "/cambiar-password": "Cambiar Contraseña",
 };
 
 export default function Layout() {
@@ -51,15 +56,21 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const NAV: NavItem[] = [
-    { to: "/",           label: "Dashboard",   Icon: IconDash,     end: true },
-    { to: "/empresas",   label: "Empresas",    Icon: IconBuilding },
-    { to: "/historial",  label: "Historial",   Icon: IconHistory  },
-    { to: "/seguimiento",label: "Seguimiento", Icon: IconChart    },
+    { to: "/",            label: "Dashboard",      Icon: IconDash,     end: true },
+    { to: "/historial",   label: "Historial",      Icon: IconHistory  },
+    { to: "/seguimiento", label: "Seguimiento",    Icon: IconChart    },
   ];
-  const ADMIN_NAV: NavItem[] = [
-    { to: "/usuarios", label: "Usuarios", Icon: IconUsers },
+
+  const canUpload = user?.rol === "admin" || user?.rol === "analista" || user?.rol === "empresa";
+  const canSeeEmpresas = user?.rol === "admin" || user?.rol === "analista" || user?.rol === "viewer";
+
+  const extra: NavItem[] = [
+    ...(canSeeEmpresas ? [{ to: "/empresas", label: "Empresas", Icon: IconBuilding }] : []),
+    ...(canUpload      ? [{ to: "/subir",    label: "Subir Planilla", Icon: IconUpload }] : []),
+    ...(user?.rol === "admin" ? [{ to: "/usuarios", label: "Usuarios", Icon: IconUsers }] : []),
   ];
-  const items = [...NAV, ...(user?.rol === "admin" ? ADMIN_NAV : [])];
+
+  const items = [...NAV, ...extra];
   const pageName = ROUTE_NAMES[location.pathname] ?? "Página";
 
   const sidebarLink = ({ isActive }: { isActive: boolean }) =>
