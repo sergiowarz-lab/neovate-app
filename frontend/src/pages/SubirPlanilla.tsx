@@ -31,7 +31,7 @@ export default function SubirPlanilla() {
   // form
   const [nit, setNit] = useState(user?.nit_empresa ?? "");
   const [operador, setOperador] = useState("");
-  const [mes, setMes] = useState(String(new Date().getMonth()).padStart(2, "0") || "01");
+  const [mes, setMes] = useState(String(new Date().getMonth() + 1).padStart(2, "0"));
   const [anio, setAnio] = useState(String(new Date().getFullYear()));
   const [archivo, setArchivo] = useState<File | null>(null);
   const [operadores, setOperadores] = useState<string[]>([]);
@@ -113,8 +113,8 @@ export default function SubirPlanilla() {
           setResultado(data);
           setEnviando(false);
         }
-      } catch {
-        // seguir intentando
+      } catch (err) {
+        console.error(`[polling] intento ${intentos} falló:`, err);
       }
       if (intentos >= 30) {
         clearInterval(pollingRef.current!);
