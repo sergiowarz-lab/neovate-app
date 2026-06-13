@@ -40,12 +40,17 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    from sqlalchemy import create_engine, text
+    # statement_timeout=20s evita que la migración bloquee la DB para siempre
+    url = settings.database_url + ("&" if "?" in settings.database_url else "?") + "connect_timeout=10"
+    connectable = create_engine(
+        url,
         poolclass=pool.NullPool,
+        connect_args={"options": "-c statement_timeout=20000 -c lock_timeout=10000"},
     )
     with connectable.connect() as connection:
+        connection.execute(text("SET statement_timeout = '20s'"))
+        connection.execute(text("SET lock_timeout = '10s'"))
         context.configure(
             connection=connection,
             target_metadata=target_metadata,

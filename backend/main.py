@@ -23,18 +23,31 @@ scheduler = AsyncIOScheduler()
 
 
 def _run_migrations() -> None:
-    """Ejecuta alembic upgrade head al iniciar — idempotente, seguro en producción."""
-    try:
-        from pathlib import Path
-        from alembic.config import Config
-        from alembic import command
+    """Ejecuta alembic upgrade head con timeout de 30s para no bloquear el startup."""
+    import threading
 
-        ini = Path(__file__).parent / "alembic.ini"
-        cfg = Config(str(ini))
-        command.upgrade(cfg, "head")
-        log.info("Migraciones aplicadas correctamente")
-    except Exception:
-        log.exception("Error ejecutando migraciones — la app continuará de todas formas")
+    resultado: dict = {"error": None}
+
+    def _migrar() -> None:
+        try:
+            from pathlib import Path
+            from alembic.config import Config
+            from alembic import command
+            ini = Path(__file__).parent / "alembic.ini"
+            cfg = Config(str(ini))
+            command.upgrade(cfg, "head")
+            log.info("Migraciones aplicadas correctamente")
+        except Exception as exc:
+            resultado["error"] = exc
+
+    hilo = threading.Thread(target=_migrar, daemon=True)
+    hilo.start()
+    hilo.join(timeout=30)
+
+    if hilo.is_alive():
+        log.warning("Migracion superó 30s — el servidor arranca de todas formas")
+    elif resultado["error"]:
+        log.exception("Error en migraciones — continuando", exc_info=resultado["error"])
 
 
 @asynccontextmanager
