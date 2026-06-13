@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from backend.api.deps import get_current_user
+from backend.api.deps import get_current_user, require_admin
 from backend.core.config import settings
 from backend.core.database import get_db
 from backend.models import PushSubscription, Usuario
@@ -96,3 +96,19 @@ def test_push(
         )
     )
     return {"mensaje": f"Notificación enviada a {enviadas} dispositivo(s)"}
+
+
+@router.get("/suscriptores", dependencies=[Depends(require_admin)])
+def listar_suscriptores(db: Session = Depends(get_db)) -> list[dict]:
+    """Lista todos los usuarios con notificaciones push activas. Solo ADMIN."""
+    subs = db.query(PushSubscription).all()
+    resultado: dict[str, dict] = {}
+    for s in subs:
+        if s.username not in resultado:
+            resultado[s.username] = {
+                "username": s.username,
+                "dispositivos": 0,
+                "desde": str(s.created_at.date()) if s.created_at else None,
+            }
+        resultado[s.username]["dispositivos"] += 1
+    return list(resultado.values())

@@ -73,6 +73,37 @@ def notificar_mora(nit9: str, nombre_empresa: str) -> int:
         return enviados
 
 
+def notificar_planilla_subida(
+    nit: str,
+    nombre_empresa: str,
+    operador: str,
+    mes: str,
+    anio: str,
+    estado: str,
+) -> int:
+    """Notifica a todos los admins cuando se sube y procesa una planilla."""
+    icono = "✅" if estado == "Validado_ok" else "❌"
+    titulo = f"{icono} Planilla {estado.replace('_', ' ')} — Neovate"
+    cuerpo = (
+        f"{nombre_empresa} ({nit})\n"
+        f"Operador: {operador} · Período: {mes}/{anio}"
+    )
+    tag = f"planilla-{nit}-{anio}-{mes}"
+
+    with SessionLocal() as db:
+        admins = db.query(Usuario).filter(
+            Usuario.activo.is_(True),
+            Usuario.rol == RolUsuario.ADMIN,
+        ).all()
+
+        enviados = 0
+        for user in admins:
+            for sub in user.push_subscriptions:
+                if enviar_push(sub.subscription_json, titulo, cuerpo, tag):
+                    enviados += 1
+    return enviados
+
+
 def _eliminar_suscripcion(subscription_json: str) -> None:
     with SessionLocal() as db:
         sub = db.query(PushSubscription).filter(

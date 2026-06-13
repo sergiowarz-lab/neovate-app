@@ -52,6 +52,8 @@ def procesar_pdf(ruta: str, eliminar_temp: bool = True) -> None:
         _persistir_resultado(metadata, validador, ok, errores, hoja)
         log.info("Validacion %s id=%s estado=%s", metadata["operador"], metadata["id"], "OK" if ok else "RECHAZADO")
 
+        _notificar_planilla_subida(metadata, ok)
+
         if ok:
             _notificar_mora_si_aplica(metadata["nit"][:9])
 
@@ -183,6 +185,32 @@ def _persistir_resultado(metadata, validador, ok: bool, errores: list[str], hoja
                     rechazo="; ".join(errores) if errores else None,
                 ))
         db.commit()
+
+
+def _notificar_planilla_subida(metadata: dict, ok: bool) -> None:
+    """Dispara push a todos los admins informando del resultado de la planilla."""
+    try:
+        from backend.services.push_service import notificar_planilla_subida
+        from backend.services.cumplimiento import nit9 as _nit9
+        from backend.core.database import SessionLocal
+        from backend.models import EmpresaAliada
+
+        nit_9 = _nit9(metadata["nit"])
+        with SessionLocal() as db:
+            empresa = db.query(EmpresaAliada).filter(EmpresaAliada.nit9 == nit_9).first()
+            nombre = empresa.nombre_empresa if empresa else metadata["nit"]
+
+        estado = "Validado_ok" if ok else "Rechazado"
+        notificar_planilla_subida(
+            nit=metadata["nit"],
+            nombre_empresa=nombre,
+            operador=metadata["operador"],
+            mes=metadata["mes"],
+            anio=metadata["anio"],
+            estado=estado,
+        )
+    except Exception:
+        log.exception("Error enviando push de planilla subida")
 
 
 def _persistir_sin_validador(metadata) -> None:
