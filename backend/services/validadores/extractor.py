@@ -1,8 +1,8 @@
 """Extracción de texto completo de un PDF (en mayúsculas).
 
-Usa PyMuPDF (fitz) como extractor principal — mucho más rápido y confiable
-con PDFs de tablas densas. Si falla, cae a pdfplumber como respaldo.
-Ambos tienen un límite de 45 segundos para evitar cuelgues.
+Usa pdfminer.six directamente (ya instalado como dependencia de pdfplumber)
+en lugar de la API de alto nivel de pdfplumber, que es más lenta para PDFs
+con tablas densas. Incluye timeout de 45 segundos para evitar cuelgues.
 """
 
 import threading
@@ -36,13 +36,9 @@ def _con_timeout(fn, timeout: int = 45):
     return resultado["valor"]
 
 
-def _extraer_con_fitz(ruta: str) -> str:
-    import fitz  # PyMuPDF
-    texto = ""
-    with fitz.open(ruta) as doc:
-        for pagina in doc:
-            texto += pagina.get_text()
-    return texto.upper()
+def _extraer_con_pdfminer(ruta: str) -> str:
+    from pdfminer.high_level import extract_text
+    return extract_text(ruta).upper()
 
 
 def _extraer_con_pdfplumber(ruta: str) -> str:
@@ -57,7 +53,7 @@ def _extraer_con_pdfplumber(ruta: str) -> str:
 def extraer_texto_completo(ruta_pdf: str | Path, timeout: int = 45) -> str:
     ruta = str(ruta_pdf)
     try:
-        return _con_timeout(lambda: _extraer_con_fitz(ruta), timeout)
+        return _con_timeout(lambda: _extraer_con_pdfminer(ruta), timeout)
     except _TimeoutError:
         raise
     except Exception:

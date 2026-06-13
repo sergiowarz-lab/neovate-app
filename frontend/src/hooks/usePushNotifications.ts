@@ -56,13 +56,15 @@ export function usePushNotifications() {
       const reg = await navigator.serviceWorker.ready;
       const subscription = await reg.pushManager.getSubscription();
       if (subscription) {
-        await api.post("/push/unsubscribe", { subscription: subscription.toJSON() });
+        // Primero eliminar del navegador (siempre, aunque el backend falle)
         await subscription.unsubscribe();
-        setSuscrito(false);
+        // Luego intentar eliminar del backend (best-effort)
+        api.post("/push/unsubscribe", { subscription: subscription.toJSON() }).catch(() => {});
       }
     } catch (err) {
       console.error("Error al desuscribirse:", err);
     } finally {
+      setSuscrito(false);
       setCargando(false);
     }
   }, [soportado]);

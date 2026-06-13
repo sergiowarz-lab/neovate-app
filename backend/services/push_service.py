@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 
 from backend.core.config import settings
 from backend.core.database import SessionLocal
@@ -37,7 +38,10 @@ def enviar_push(subscription_json: str, titulo: str, cuerpo: str, tag: str = "mo
             subscription_info=sub,
             data=json.dumps({"title": titulo, "body": cuerpo, "tag": tag}),
             vapid_private_key=settings.VAPID_PRIVATE_KEY,
-            vapid_claims={"sub": settings.VAPID_CLAIMS_SUB},
+            vapid_claims={
+                "sub": settings.VAPID_CLAIMS_SUB or "mailto:admin@neovate.co",
+                "exp": int(time.time()) + 43200,
+            },
         )
         return True
     except WebPushException as exc:
