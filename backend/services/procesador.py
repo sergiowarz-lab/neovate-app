@@ -20,7 +20,13 @@ from backend.services.validadores import (  # noqa: F401  — registra validador
     aportes_en_linea, asopagos, compensar_miplanilla, enlace, nomina,
     simple_planilla, soi,
 )
-from backend.services.validadores.extractor import PDFTimeoutError, extraer_texto_completo
+from backend.services.validadores.extractor import (
+    PDFCorruptError,
+    PDFEmptyError,
+    PDFEncryptedError,
+    PDFTimeoutError,
+    extraer_texto_completo,
+)
 from backend.services.validadores.parser_nombre import parsear_nombre
 from backend.services.validadores.registry import obtener_validador, obtener_hoja_destino
 
@@ -57,13 +63,25 @@ def procesar_pdf(ruta: str, eliminar_temp: bool = True) -> None:
         if ok:
             _notificar_mora_si_aplica(metadata["nit"][:9])
 
+    except PDFEncryptedError as exc:
+        log.warning("PDF protegido %s: %s", ruta_path.name, exc)
+        if reporte_id:
+            _marcar_error(reporte_id, hoja, str(exc))
+    except PDFEmptyError as exc:
+        log.warning("PDF sin texto %s: %s", ruta_path.name, exc)
+        if reporte_id:
+            _marcar_error(reporte_id, hoja, str(exc))
+    except PDFCorruptError as exc:
+        log.warning("PDF corrupto %s: %s", ruta_path.name, exc)
+        if reporte_id:
+            _marcar_error(reporte_id, hoja, str(exc))
     except PDFTimeoutError as exc:
         log.error("Timeout extrayendo PDF %s: %s", ruta_path.name, exc)
         if reporte_id:
             _marcar_error(
                 reporte_id, hoja,
                 "El archivo tardó demasiado en procesarse. "
-                "Verifique que el PDF no esté dañado o protegido e intente de nuevo."
+                "Verifique que el PDF no esté dañado o protegido e intente de nuevo.",
             )
     except Exception:
         log.exception("Error inesperado procesando PDF %s", ruta_path.name)
