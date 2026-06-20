@@ -41,13 +41,54 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-// Cache para llamadas a la API
+// ── Offline: historial endpoints ───────────────────────────────────────────────
+const HISTORIAL_CACHE = "neovate-historial-v1";
+const HISTORIAL_RUTAS = ["/api/reportes/ss", "/api/reportes/nomina"];
+
 self.addEventListener("fetch", (event) => {
-  if (event.request.url.includes("/api/")) {
+  const url = new URL(event.request.url);
+  const esHistorial =
+    event.request.method === "GET" &&
+    HISTORIAL_RUTAS.some((r) => url.pathname.endsWith(r));
+
+  if (esHistorial) {
+    // Network First: intenta red → guarda en caché → si falla, sirve caché
     event.respondWith(
-      fetch(event.request).catch(() =>
-        caches.match(event.request).then((r) => r ?? new Response("Offline", { status: 503 }))
-      )
+      fetch(event.request.clone())
+        .then(async (response) => {
+          if (response.ok) {
+            const cache = await caches.open(HISTORIAL_CACHE);
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        })
+        .catch(async () => {
+          const cached = await caches.match(event.request);
+          // Si hay datos en caché, devolverlos con header indicador
+          if (cached) {
+            const body = await cached.text();
+            return new Response(body, {
+              status: 200,
+              headers: {
+                "Content-Type": "application/json",
+                "X-From-Cache": "true",
+              },
+            });
+          }
+          // Sin caché y sin red: lista vacía
+          return new Response("[]", {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        })
+    );
+    return;
+  }
+
+  // Resto de llamadas API: solo red
+  if (url.pathname.includes("/api/")) {
+    event.respondWith(
+      fetch(event.request).catch(() => new Response("Offline", { status: 503 }))
     );
   }
 });

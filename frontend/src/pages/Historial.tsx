@@ -37,6 +37,7 @@ export default function Historial() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [descargando, setDescargando] = useState(false);
+  const [desdeCache, setDesdeCache] = useState(false);
 
   const anioActual = new Date().getFullYear();
   const mesActual = new Date().getMonth() + 1;
@@ -46,9 +47,11 @@ export default function Historial() {
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setDesdeCache(false);
     const url = tab === "ss" ? "/reportes/ss" : "/reportes/nomina";
     api.get(url)
       .then((r) => {
+        if (r.headers?.["x-from-cache"] === "true") setDesdeCache(true);
         if (tab === "ss") setSS(r.data);
         else setNomina(r.data);
       })
@@ -134,6 +137,14 @@ export default function Historial() {
         ))}
       </motion.div>
 
+      {desdeCache && (
+        <div className="mb-4 flex items-center gap-2 px-4 py-2.5 rounded-lg
+                        bg-amber-500/10 border border-amber-400/30 text-amber-600
+                        dark:text-amber-400 text-sm">
+          <span>⚠️</span>
+          <span>Sin conexión — mostrando datos del último acceso</span>
+        </div>
+      )}
       {error && <div className="mb-4"><ErrorAlert message={error} /></div>}
 
       <TableWrapper>
