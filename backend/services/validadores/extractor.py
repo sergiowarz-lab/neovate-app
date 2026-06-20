@@ -86,14 +86,22 @@ def _extraer_con_pdfplumber(ruta: str) -> str:
     return texto.upper()
 
 
-def extraer_texto_completo(ruta_pdf: str | Path, timeout: int = 45) -> str:
+def extraer_texto_completo(
+    ruta_pdf: str | Path,
+    timeout_pdfminer: int = 5,
+    timeout_pdfplumber: int = 30,
+) -> str:
     """Extrae el texto de un PDF y lo devuelve en mayúsculas.
+
+    Estrategia de dos intentos:
+      1. pdfminer con timeout corto (5s) — rápido para PDFs simples
+      2. pdfplumber con timeout largo (30s) — maneja PDFs grandes/complejos
 
     Lanza:
         PDFEncryptedError — PDF con contraseña o DRM
         PDFEmptyError     — PDF escaneado sin texto seleccionable
         PDFCorruptError   — Archivo inválido o dañado
-        PDFTimeoutError   — Ambos extractores superaron el timeout
+        PDFTimeoutError   — Ambos extractores superaron su timeout
     """
     ruta = str(ruta_pdf)
     nombre = Path(ruta).name
@@ -101,24 +109,24 @@ def extraer_texto_completo(ruta_pdf: str | Path, timeout: int = 45) -> str:
     # Errores que no tienen solución con un segundo extractor — fallan rápido
     errores_definitivos = (PDFEncryptedError, PDFCorruptError)
 
-    # Intento 1: pdfminer (más rápido para texto nativo)
+    # Intento 1: pdfminer — rápido para la mayoría de PDFs nativos
     try:
-        texto = _con_timeout(lambda: _extraer_con_pdfminer(ruta), timeout)
+        texto = _con_timeout(lambda: _extraer_con_pdfminer(ruta), timeout_pdfminer)
         log.info("pdfminer extrajo %s (%d chars)", nombre, len(texto))
         if len(texto.strip()) < _MIN_CHARS:
             log.warning("pdfminer devolvió texto muy corto en %s — intentando pdfplumber", nombre)
             raise ValueError("texto vacío")
         return texto
     except errores_definitivos:
-        raise  # no tiene sentido intentar pdfplumber
+        raise
     except PDFTimeoutError:
-        log.warning("pdfminer superó %ss en %s — intentando pdfplumber", timeout, nombre)
+        log.warning("pdfminer superó %ss en %s — intentando pdfplumber", timeout_pdfminer, nombre)
     except Exception as exc:
         log.warning("pdfminer falló en %s (%s) — intentando pdfplumber", nombre, exc)
 
-    # Intento 2: pdfplumber como fallback
+    # Intento 2: pdfplumber — más lento pero maneja PDFs complejos/pesados
     try:
-        texto = _con_timeout(lambda: _extraer_con_pdfplumber(ruta), timeout)
+        texto = _con_timeout(lambda: _extraer_con_pdfplumber(ruta), timeout_pdfplumber)
         log.info("pdfplumber extrajo %s (%d chars)", nombre, len(texto))
         if len(texto.strip()) < _MIN_CHARS:
             raise PDFEmptyError(
@@ -129,7 +137,7 @@ def extraer_texto_completo(ruta_pdf: str | Path, timeout: int = 45) -> str:
     except PDFEmptyError:
         raise
     except PDFTimeoutError:
-        log.error("pdfplumber también superó %ss en %s", timeout, nombre)
+        log.error("pdfplumber también superó %ss en %s", timeout_pdfplumber, nombre)
         raise
     except Exception as exc:
         log.error("pdfplumber también falló en %s: %s", nombre, exc)

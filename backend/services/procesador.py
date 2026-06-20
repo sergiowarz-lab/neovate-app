@@ -45,7 +45,7 @@ def procesar_pdf(ruta: str, eliminar_temp: bool = True) -> None:
     try:
         metadata = parsear_nombre(ruta_path.name)
         reporte_id = metadata["id"]
-        texto = extraer_texto_completo(ruta_path, timeout=22)
+        texto = extraer_texto_completo(ruta_path)
         validador = obtener_validador(metadata["operador"], texto, metadata)
         hoja = obtener_hoja_destino(metadata["operador"])
 
