@@ -126,6 +126,7 @@ export default function Dashboard() {
   const [rows, setRows] = useState<SeguimientoMensual[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [desdeCache, setDesdeCache] = useState(false);
 
   const now = new Date();
   const [anio, setAnio] = useState(now.getFullYear());
@@ -134,11 +135,19 @@ export default function Dashboard() {
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setDesdeCache(false);
     Promise.all([
       api.get<DashboardKPIs>("/seguimiento/kpis", { params: { anio, mes } }),
       api.get<SeguimientoMensual[]>("/seguimiento", { params: { anio, mes } }),
     ])
-      .then(([k, s]) => { setKpis(k.data); setRows(s.data); })
+      .then(([k, s]) => {
+        const fromCache =
+          k.headers?.["x-from-cache"] === "true" ||
+          s.headers?.["x-from-cache"] === "true";
+        if (fromCache) setDesdeCache(true);
+        setKpis(k.data);
+        setRows(s.data);
+      })
       .catch((e) => setError(errorMessage(e, "No se pudieron cargar los datos")))
       .finally(() => setLoading(false));
   }, [anio, mes]);
@@ -201,6 +210,14 @@ export default function Dashboard() {
 
   return (
     <div>
+      {desdeCache && (
+        <div className="mb-4 flex items-center gap-2 px-4 py-2.5 rounded-lg
+                        bg-amber-500/10 border border-amber-400/30 text-amber-600
+                        dark:text-amber-400 text-sm">
+          <span>⚠️</span>
+          <span>Sin conexión — mostrando datos del último acceso</span>
+        </div>
+      )}
       {/* Page header */}
       <motion.div
         className="flex items-center justify-between mb-5"

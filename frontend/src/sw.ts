@@ -43,7 +43,12 @@ self.addEventListener("notificationclick", (event) => {
 
 // ── Offline: historial endpoints ───────────────────────────────────────────────
 const HISTORIAL_CACHE = "neovate-historial-v1";
-const HISTORIAL_RUTAS = ["/api/reportes/ss", "/api/reportes/nomina"];
+const HISTORIAL_RUTAS = [
+  "/api/reportes/ss",
+  "/api/reportes/nomina",
+  "/api/seguimiento/kpis",
+  "/api/seguimiento",
+];
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
