@@ -5,12 +5,19 @@ en lugar de la API de alto nivel de pdfplumber, que es más lenta para PDFs
 con tablas densas. Incluye timeout de 45 segundos para evitar cuelgues.
 """
 
+import logging
 import threading
 from pathlib import Path
 
+log = logging.getLogger("neovate.extractor")
 
-class _TimeoutError(Exception):
-    pass
+
+class PDFTimeoutError(Exception):
+    """El PDF no pudo extraerse dentro del tiempo límite."""
+
+
+# Alias interno para compatibilidad
+_TimeoutError = PDFTimeoutError
 
 
 def _con_timeout(fn, timeout: int = 45):
@@ -27,7 +34,7 @@ def _con_timeout(fn, timeout: int = 45):
     hilo.join(timeout=timeout)
 
     if hilo.is_alive():
-        raise _TimeoutError(
+        raise PDFTimeoutError(
             f"Extracción del PDF superó {timeout}s — "
             "el archivo puede ser demasiado complejo o estar dañado"
         )
@@ -52,9 +59,26 @@ def _extraer_con_pdfplumber(ruta: str) -> str:
 
 def extraer_texto_completo(ruta_pdf: str | Path, timeout: int = 45) -> str:
     ruta = str(ruta_pdf)
+    nombre = Path(ruta).name
+
+    # Intento 1: pdfminer (más rápido para texto nativo)
     try:
-        return _con_timeout(lambda: _extraer_con_pdfminer(ruta), timeout)
-    except _TimeoutError:
+        texto = _con_timeout(lambda: _extraer_con_pdfminer(ruta), timeout)
+        log.info("pdfminer extrajo %s (%d chars)", nombre, len(texto))
+        return texto
+    except PDFTimeoutError:
+        log.warning("pdfminer superó %ss en %s — intentando pdfplumber", timeout, nombre)
+    except Exception as exc:
+        log.warning("pdfminer falló en %s (%s) — intentando pdfplumber", nombre, exc)
+
+    # Intento 2: pdfplumber como fallback
+    try:
+        texto = _con_timeout(lambda: _extraer_con_pdfplumber(ruta), timeout)
+        log.info("pdfplumber extrajo %s (%d chars)", nombre, len(texto))
+        return texto
+    except PDFTimeoutError:
+        log.error("pdfplumber también superó %ss en %s — archivo no procesable", timeout, nombre)
         raise
-    except Exception:
-        return _con_timeout(lambda: _extraer_con_pdfplumber(ruta), timeout)
+    except Exception as exc:
+        log.error("pdfplumber también falló en %s: %s", nombre, exc)
+        raise

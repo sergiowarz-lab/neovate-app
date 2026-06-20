@@ -20,7 +20,7 @@ from backend.services.validadores import (  # noqa: F401  — registra validador
     aportes_en_linea, asopagos, compensar_miplanilla, enlace, nomina,
     simple_planilla, soi,
 )
-from backend.services.validadores.extractor import extraer_texto_completo
+from backend.services.validadores.extractor import PDFTimeoutError, extraer_texto_completo
 from backend.services.validadores.parser_nombre import parsear_nombre
 from backend.services.validadores.registry import obtener_validador, obtener_hoja_destino
 
@@ -57,8 +57,16 @@ def procesar_pdf(ruta: str, eliminar_temp: bool = True) -> None:
         if ok:
             _notificar_mora_si_aplica(metadata["nit"][:9])
 
+    except PDFTimeoutError as exc:
+        log.error("Timeout extrayendo PDF %s: %s", ruta_path.name, exc)
+        if reporte_id:
+            _marcar_error(
+                reporte_id, hoja,
+                "El archivo tardó demasiado en procesarse. "
+                "Verifique que el PDF no esté dañado o protegido e intente de nuevo."
+            )
     except Exception:
-        log.exception("Error procesando PDF %s", ruta_path.name)
+        log.exception("Error inesperado procesando PDF %s", ruta_path.name)
         if reporte_id:
             _marcar_error(reporte_id, hoja)
     finally:
@@ -103,7 +111,11 @@ def procesar_texto_ocr(
         _marcar_error(reporte_id, hoja)
 
 
-def _marcar_error(reporte_id: str, hoja: str) -> None:
+def _marcar_error(
+    reporte_id: str,
+    hoja: str,
+    mensaje: str = "Error interno al procesar el archivo",
+) -> None:
     """Marca el registro PROCESANDO como RECHAZADO cuando hay una excepción inesperada."""
     with SessionLocal() as db:
         if hoja == "Nomina":
@@ -112,7 +124,7 @@ def _marcar_error(reporte_id: str, hoja: str) -> None:
             rep = db.get(ReporteSS, reporte_id)
         if rep and rep.estado == EstadoReporte.PROCESANDO:
             rep.estado = EstadoReporte.RECHAZADO
-            rep.rechazo = "Error interno al procesar el archivo"
+            rep.rechazo = mensaje
             db.commit()
 
 
